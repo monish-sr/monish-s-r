@@ -1,0 +1,859 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sync_fifo--verilog :: monish-sr</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #080b0f;
+  --bg1:     #0d1117;
+  --bg2:     #111820;
+  --bg3:     #0a1020;
+  --green:   #00ff88;
+  --green-d: #00cc6a;
+  --cyan:    #00e5ff;
+  --cyan-d:  #00b8cc;
+  --amber:   #ffb800;
+  --red:     #ff4455;
+  --purple:  #c084fc;
+  --dim:     #1e2e1e;
+  --muted:   #4a6060;
+  --text:    #c8d8c8;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-ui: 'Oxanium', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:14px;line-height:1.6;overflow-x:hidden;cursor:crosshair}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,.012) 2px,rgba(0,255,136,.012) 4px);pointer-events:none;z-index:9999}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--green)}
+
+/* NAVBAR */
+#navbar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(8,11,15,.94);border-bottom:1px solid var(--green);
+  backdrop-filter:blur(10px);display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;height:44px;
+  font-size:12px;box-shadow:0 0 24px rgba(0,255,136,.15);
+}
+.nav-brand{color:var(--green);font-family:var(--font-ui);font-weight:700;letter-spacing:2px;text-decoration:none}
+.nav-brand span{color:var(--amber)}
+.nav-crumb{color:var(--muted);display:flex;align-items:center;gap:8px;font-size:11px}
+.nav-crumb a{color:var(--cyan);text-decoration:none}
+.nav-crumb a:hover{color:var(--green)}
+.nav-right{display:flex;gap:16px;align-items:center;font-size:11px;color:var(--muted)}
+#live-clock{color:var(--cyan);font-family:var(--font-mono);letter-spacing:1px}
+.nav-badge{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--green);padding:2px 8px;border-radius:2px;font-size:10px;letter-spacing:1px}
+
+/* HERO */
+#hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:80px 8vw 40px;position:relative;overflow:hidden;
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  mask-image:radial-gradient(ellipse 90% 80% at 30% 50%,black,transparent);
+}
+.scanbeam{position:absolute;top:0;left:-100%;width:50%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanbeam 7s linear infinite;opacity:.35}
+@keyframes scanbeam{to{left:200%}}
+.scanbeam2{top:33%;animation-delay:3.5s;background:linear-gradient(90deg,transparent,var(--green),transparent)}
+
+.hero-content{position:relative;z-index:1;max-width:900px;width:100%}
+.hero-eyebrow{font-size:11px;color:var(--green);letter-spacing:4px;text-transform:uppercase;margin-bottom:14px;opacity:0;animation:fadeUp .5s .3s forwards}
+.hero-eyebrow span{color:var(--muted)}
+.hero-title{
+  font-family:var(--font-display);
+  font-size:clamp(44px,8.5vw,108px);
+  line-height:.88;color:var(--green);
+  text-shadow:0 0 50px rgba(0,255,136,.4);
+  opacity:0;animation:fadeUp .5s .5s forwards;
+}
+.hero-title .sub{color:var(--cyan);text-shadow:0 0 50px rgba(0,229,255,.4)}
+.hero-tagline{
+  font-family:var(--font-ui);font-size:clamp(13px,1.5vw,16px);
+  color:var(--text);letter-spacing:2px;margin:18px 0 28px;
+  opacity:0;animation:fadeUp .5s .7s forwards;
+  border-left:2px solid var(--amber);padding-left:14px;
+  max-width:640px;line-height:1.8;
+}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;opacity:0;animation:fadeUp .5s .9s forwards}
+.mpill{font-size:10px;letter-spacing:1.5px;padding:4px 12px;border:1px solid;border-radius:2px;font-family:var(--font-ui);display:flex;align-items:center;gap:6px}
+.mpill.g{color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.06)}
+.mpill.c{color:var(--cyan);border-color:rgba(0,229,255,.3);background:rgba(0,229,255,.06)}
+.mpill.a{color:var(--amber);border-color:rgba(255,184,0,.3);background:rgba(255,184,0,.06)}
+.mpill.r{color:var(--red);border-color:rgba(255,68,85,.3);background:rgba(255,68,85,.06)}
+
+.stat-strip{
+  display:flex;gap:0;flex-wrap:wrap;
+  border:1px solid var(--dim);background:var(--bg1);
+  margin-bottom:36px;opacity:0;animation:fadeUp .5s 1.1s forwards;
+}
+.stat-cell{flex:1;min-width:110px;padding:14px 20px;border-right:1px solid var(--dim);display:flex;flex-direction:column;gap:4px;transition:background .2s}
+.stat-cell:last-child{border-right:none}
+.stat-cell:hover{background:rgba(0,255,136,.04)}
+.stat-num{font-family:var(--font-display);font-size:28px;color:var(--green);letter-spacing:1px}
+.stat-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;opacity:0;animation:fadeUp .5s 1.2s forwards}
+.btn{font-family:var(--font-mono);font-size:12px;letter-spacing:2px;padding:10px 22px;border:1px solid;text-decoration:none;cursor:pointer;transition:all .2s;background:transparent;display:inline-flex;align-items:center;gap:8px;text-transform:uppercase}
+.btn-green{color:var(--green);border-color:var(--green)}
+.btn-green:hover{background:var(--green);color:var(--bg);box-shadow:0 0 20px var(--green)}
+.btn-cyan{color:var(--cyan);border-color:var(--cyan)}
+.btn-cyan:hover{background:var(--cyan);color:var(--bg);box-shadow:0 0 20px var(--cyan)}
+.btn-amber{color:var(--amber);border-color:var(--amber)}
+.btn-amber:hover{background:var(--amber);color:var(--bg);box-shadow:0 0 20px var(--amber)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* SECTIONS */
+section{padding:72px 8vw;position:relative}
+.sec-label{font-size:10px;color:var(--green);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.sec-label::before{content:'//';color:var(--amber)}
+.sec-label::after{content:'';flex:1;max-width:60px;height:1px;background:var(--green)}
+.sec-title{font-family:var(--font-display);font-size:clamp(32px,4.5vw,56px);color:#fff;letter-spacing:2px;line-height:1;margin-bottom:40px}
+.sec-title span{color:var(--green)}
+
+/* ARCHITECTURE */
+#overview{background:var(--bg1)}
+.arch-wrap{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+@media(max-width:760px){.arch-wrap{grid-template-columns:1fr}}
+.arch-diagram{background:var(--bg3);border:1px solid var(--dim);padding:28px;position:relative;overflow:hidden}
+.arch-diagram::before{content:'// BLOCK_DIAGRAM';position:absolute;top:0;right:0;font-size:9px;color:var(--muted);letter-spacing:2px;padding:6px 10px;background:var(--bg2)}
+.diag-svg{width:100%;max-width:440px;display:block;margin:0 auto}
+.arch-details{display:flex;flex-direction:column;gap:16px}
+.param-table{width:100%;border-collapse:collapse;font-size:12px}
+.param-table th{text-align:left;color:var(--amber);font-weight:600;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--dim);font-family:var(--font-ui);letter-spacing:1px;font-size:10px}
+.param-table td{padding:8px 12px;border-bottom:1px solid rgba(42,58,42,.3);color:var(--text);vertical-align:top}
+.param-table tr:hover td{background:rgba(0,255,136,.03)}
+.param-table .key{color:var(--cyan);font-weight:600}
+.param-table .val{color:var(--green)}
+.port-block{background:var(--bg2);border:1px solid var(--dim);overflow:hidden}
+.port-block-head{background:var(--bg3);border-bottom:1px solid var(--dim);padding:8px 14px;font-size:10px;color:var(--amber);letter-spacing:2px;font-family:var(--font-ui)}
+.port-table{width:100%;border-collapse:collapse;font-size:11px}
+.port-table th{text-align:left;color:var(--muted);padding:7px 12px;background:var(--bg3);font-weight:400;letter-spacing:1px}
+.port-table td{padding:6px 12px;border-bottom:1px solid rgba(42,58,42,.25);color:var(--text)}
+.port-table .in{color:var(--cyan)}
+.port-table .out{color:var(--green)}
+.port-table .sig{color:var(--amber)}
+.port-table .fl{color:var(--red)}
+
+/* WORKING PRINCIPLE */
+#working{background:var(--bg)}
+.phases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.phase-card{background:var(--bg1);border:1px solid var(--dim);padding:20px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s;cursor:default}
+.phase-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;transform:scaleX(0);transition:transform .3s}
+.phase-card.rst-c::before{background:var(--cyan)}
+.phase-card.wr-c::before{background:var(--green)}
+.phase-card.rd-c::before{background:var(--amber)}
+.phase-card.full-c::before{background:var(--red)}
+.phase-card.empty-c::before{background:var(--purple)}
+.phase-card:hover{transform:translateY(-4px)}
+.phase-card.rst-c:hover{border-color:var(--cyan)}
+.phase-card.wr-c:hover{border-color:var(--green)}
+.phase-card.rd-c:hover{border-color:var(--amber)}
+.phase-card.full-c:hover{border-color:var(--red)}
+.phase-card.empty-c:hover{border-color:var(--purple)}
+.phase-card:hover::before{transform:scaleX(1)}
+.phase-icon{font-size:20px;margin-bottom:10px}
+.phase-title{font-family:var(--font-ui);font-size:12px;font-weight:700;margin-bottom:10px}
+.phase-card.rst-c .phase-title{color:var(--cyan)}
+.phase-card.wr-c .phase-title{color:var(--green)}
+.phase-card.rd-c .phase-title{color:var(--amber)}
+.phase-card.full-c .phase-title{color:var(--red)}
+.phase-card.empty-c .phase-title{color:var(--purple)}
+.phase-conds{list-style:none;font-size:11px;color:var(--text)}
+.phase-conds li{padding:3px 0;display:flex;gap:6px;align-items:flex-start}
+.phase-conds li::before{content:'▸';flex-shrink:0;margin-top:1px}
+.phase-card.rst-c .phase-conds li::before{color:var(--cyan)}
+.phase-card.wr-c .phase-conds li::before{color:var(--green)}
+.phase-card.rd-c .phase-conds li::before{color:var(--amber)}
+.phase-card.full-c .phase-conds li::before{color:var(--red)}
+.phase-card.empty-c .phase-conds li::before{color:var(--purple)}
+
+/* TESTCASES */
+#testcases{background:var(--bg1)}
+.tc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:32px}
+.tc-card{background:var(--bg2);border:1px solid var(--dim);padding:18px;position:relative;transition:border-color .3s,transform .3s}
+.tc-card:hover{transform:translateY(-4px)}
+.tc-card.tc-full:hover{border-color:var(--green)}
+.tc-card.tc-empty:hover{border-color:var(--cyan)}
+.tc-card.tc-over:hover{border-color:var(--red)}
+.tc-card.tc-under:hover{border-color:var(--amber)}
+.tc-tag{display:inline-block;font-size:9px;letter-spacing:2px;padding:2px 8px;border:1px solid;border-radius:2px;font-family:var(--font-ui);margin-bottom:10px}
+.tc-card.tc-full .tc-tag{color:var(--green);border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.06)}
+.tc-card.tc-empty .tc-tag{color:var(--cyan);border-color:rgba(0,229,255,.4);background:rgba(0,229,255,.06)}
+.tc-card.tc-over .tc-tag{color:var(--red);border-color:rgba(255,68,85,.4);background:rgba(255,68,85,.06)}
+.tc-card.tc-under .tc-tag{color:var(--amber);border-color:rgba(255,184,0,.4);background:rgba(255,184,0,.06)}
+.tc-name{font-family:var(--font-ui);font-size:14px;font-weight:700;margin-bottom:8px;color:#fff}
+.tc-desc{font-size:11px;color:var(--text);line-height:1.6;margin-bottom:10px}
+.tc-seq{font-size:10px;color:var(--muted)}
+.tc-seq span{color:var(--amber)}
+
+/* WAVEFORM */
+#waveform{background:var(--bg2)}
+.wave-note{font-size:12px;color:var(--muted);margin-bottom:20px;padding:10px 16px;border-left:2px solid var(--amber);background:rgba(255,184,0,.04)}
+.wave-img-wrap{background:var(--bg3);border:1px solid var(--dim);padding:0;overflow:hidden;position:relative}
+.wave-img-wrap img{width:100%;display:block;filter:brightness(1.05) saturate(1.1)}
+.wave-label{position:absolute;top:8px;left:8px;font-size:9px;color:var(--green);letter-spacing:2px;background:rgba(8,11,15,.8);padding:3px 8px;border:1px solid var(--dim)}
+
+/* TESTBENCH TASKS */
+#testbench{background:var(--bg)}
+.tb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:32px}
+@media(max-width:760px){.tb-grid{grid-template-columns:1fr}}
+.tb-task{background:var(--bg1);border:1px solid var(--dim);padding:18px;transition:border-color .3s}
+.tb-task.t1:hover{border-color:var(--cyan)}
+.tb-task.t2:hover{border-color:var(--green)}
+.tb-task.t3:hover{border-color:var(--amber)}
+.tb-task-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tb-task-icon{width:28px;height:28px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.tb-task.t1 .tb-task-icon{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3)}
+.tb-task.t2 .tb-task-icon{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3)}
+.tb-task.t3 .tb-task-icon{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3)}
+.tb-task-name{font-family:var(--font-ui);font-size:13px;font-weight:700}
+.tb-task.t1 .tb-task-name{color:var(--cyan)}
+.tb-task.t2 .tb-task-name{color:var(--green)}
+.tb-task.t3 .tb-task-name{color:var(--amber)}
+.tb-task ul{list-style:none;font-size:11px;color:var(--text)}
+.tb-task li{padding:3px 0;display:flex;gap:8px}
+.tb-task li::before{content:'—';color:var(--muted);flex-shrink:0}
+
+/* RUN.DO */
+.run-do-box{background:var(--bg1);border:1px solid var(--dim);overflow:hidden;margin-top:24px}
+.run-do-head{background:var(--bg3);border-bottom:1px solid var(--dim);padding:8px 16px;font-size:10px;color:var(--amber);letter-spacing:2px;font-family:var(--font-ui);display:flex;align-items:center;gap:8px}
+.run-do-body{padding:16px 20px;font-size:12px;line-height:1.9}
+
+/* CODE VIEWER */
+.code-viewer{background:var(--bg);border:1px solid var(--dim);overflow:hidden}
+.code-titlebar{background:var(--bg3);border-bottom:1px solid var(--dim);padding:8px 16px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
+.code-tabs{display:flex;border-bottom:1px solid var(--dim)}
+.ctab{padding:8px 18px;font-size:11px;cursor:pointer;border-right:1px solid var(--dim);color:var(--muted);font-family:var(--font-mono);transition:color .2s,background .2s;letter-spacing:.5px}
+.ctab:hover{color:var(--text);background:rgba(0,255,136,.03)}
+.ctab.active{color:var(--green);background:rgba(0,255,136,.06);border-bottom:2px solid var(--green)}
+.code-body{padding:20px;overflow-x:auto;font-size:12px;line-height:1.75;max-height:460px;overflow-y:auto}
+.code-body::-webkit-scrollbar{width:4px;height:4px}
+.code-body::-webkit-scrollbar-thumb{background:var(--green)}
+.cpane{display:none}.cpane.active{display:block}
+.kw{color:var(--purple)}.mod{color:var(--cyan)}.sig{color:var(--green)}
+.num{color:var(--amber)}.cmt{color:var(--muted);font-style:italic}
+.parm{color:#f97316}.op{color:var(--amber)}.str{color:var(--amber)}
+
+/* FILE LIST */
+#files{background:var(--bg1)}
+.file-list{display:flex;flex-direction:column;gap:8px;max-width:640px}
+.file-row{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--dim);padding:12px 16px;transition:border-color .2s,background .2s;text-decoration:none}
+.file-row:hover{border-color:var(--green);background:rgba(0,255,136,.03)}
+.file-icon{font-size:16px;flex-shrink:0}
+.file-name{color:var(--cyan);font-size:13px;flex:1}
+.file-meta{font-size:10px;color:var(--muted);text-align:right}
+.file-size{color:var(--amber)}
+
+/* FOOTER */
+footer{background:var(--bg3);border-top:1px solid var(--dim);padding:20px 8vw;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted)}
+footer span{color:var(--green)}
+footer a{color:var(--cyan);text-decoration:none}
+footer a:hover{color:var(--green)}
+
+/* SCROLL REVEAL */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+.reveal.visible{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a href="#" class="nav-brand">MONISH<span>_SR</span></a>
+  <div class="nav-crumb">
+    <a href="index.html">monish-sr</a>
+    <span style="color:var(--dim)">/</span>
+    <span style="color:var(--green)">sync_fifo--verilog</span>
+    <span style="color:var(--dim)">:: main</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-badge">Verilog 96.9%</span>
+    <span id="live-clock">00:00:00</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="scanbeam"></div>
+  <div class="scanbeam scanbeam2"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">// monish-sr / <span>sync_fifo--verilog</span> &nbsp;·&nbsp; Verilog &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; 5 Commits</div>
+    <h1 class="hero-title">
+      SYNCHRONOUS FIFO<br>
+      <span class="sub">USING VERILOG</span>
+    </h1>
+    <div class="hero-tagline">
+      Parameterized synchronous FIFO with pointer-toggle full/empty detection.<br>
+      Overflow &amp; underflow protection, verified with directed testcases via <code style="color:var(--amber)">+testcase</code> plusarg.
+    </div>
+    <div class="meta-row">
+      <span class="mpill g">⬡ depth = 4 (configurable)</span>
+      <span class="mpill c">⬡ width = 3 (configurable)</span>
+      <span class="mpill a">⬡ ptr_width = $clog2(depth)</span>
+      <span class="mpill g">⬡ Negedge Triggered</span>
+      <span class="mpill r">⬡ Overflow / Underflow Guard</span>
+      <span class="mpill c">⬡ Pointer-Toggle Full/Empty</span>
+    </div>
+    <div class="stat-strip">
+      <div class="stat-cell"><span class="stat-num">68</span><span class="stat-lbl">Design Lines</span></div>
+      <div class="stat-cell"><span class="stat-num">89</span><span class="stat-lbl">Testbench Lines</span></div>
+      <div class="stat-cell"><span class="stat-num">3</span><span class="stat-lbl">TB Tasks</span></div>
+      <div class="stat-cell"><span class="stat-num">4</span><span class="stat-lbl">Testcases</span></div>
+      <div class="stat-cell"><span class="stat-num">4</span><span class="stat-lbl">FIFO Depth</span></div>
+      <div class="stat-cell"><span class="stat-num">3</span><span class="stat-lbl">Bit Width</span></div>
+    </div>
+    <div class="hero-btns">
+      <a href="https://github.com/monish-sr/sync_fifo--verilog" target="_blank" class="btn btn-green">⬡ VIEW ON GITHUB</a>
+      <a href="#code" class="btn btn-cyan">⟨/⟩ SOURCE CODE</a>
+      <a href="#waveform" class="btn btn-amber">~ WAVEFORM</a>
+    </div>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="sec-label">MODULE_01 &nbsp; ARCHITECTURE</div>
+  <h2 class="sec-title">DESIGN <span>OVERVIEW</span></h2>
+  <div class="arch-wrap reveal">
+
+    <!-- BLOCK DIAGRAM -->
+    <div class="arch-diagram">
+      <svg class="diag-svg" viewBox="0 0 440 420" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+        <defs>
+          <filter id="glow-g"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="glow-c"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00ff88"/></marker>
+          <marker id="arr-c" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00e5ff"/></marker>
+          <marker id="arr-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ff4455"/></marker>
+          <marker id="arr-a" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ffb800"/></marker>
+          <marker id="arr-p" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#c084fc"/></marker>
+        </defs>
+        <rect width="440" height="420" fill="#0a1020"/>
+
+        <!-- Main FIFO module box -->
+        <rect x="140" y="90" width="160" height="210" rx="2" fill="#0d1117" stroke="#00ff88" stroke-width="1.5" filter="url(#glow-g)"/>
+        <rect x="140" y="90" width="160" height="24" fill="#00ff88" fill-opacity=".1"/>
+        <text x="220" y="107" text-anchor="middle" fill="#00ff88" font-size="10" letter-spacing="2" font-weight="600">FIFO MODULE</text>
+        <text x="220" y="126" text-anchor="middle" fill="#4a6060" font-size="9">#(depth=4, width=3)</text>
+
+        <!-- Internal FIFO array -->
+        <rect x="158" y="136" width="124" height="96" rx="1" fill="#111820" stroke="#1e2e1e"/>
+        <text x="220" y="152" text-anchor="middle" fill="#4a6060" font-size="9" letter-spacing="1">reg [2:0] fifo [3:0]</text>
+        <rect x="166" y="158" width="108" height="10" rx="1" fill="#1e2e1e"/>
+        <rect x="166" y="172" width="108" height="10" rx="1" fill="#1e2e1e"/>
+        <rect x="166" y="186" width="108" height="10" rx="1" fill="#1e2e1e"/>
+        <rect x="166" y="200" width="108" height="10" rx="1" fill="#1e2e1e"/>
+        <text x="172" y="166" fill="#00ff88" font-size="7">wr_pntr → [0]: xxx</text>
+        <text x="172" y="180" fill="#00ff88" font-size="7">          [1]: xxx</text>
+        <text x="172" y="194" fill="#00e5ff" font-size="7">rd_pntr → [2]: xxx</text>
+        <text x="172" y="208" fill="#4a6060" font-size="7">          [3]: xxx</text>
+
+        <!-- Pointer toggle labels -->
+        <text x="220" y="252" text-anchor="middle" fill="#4a6060" font-size="8">wr_tggle / rd_tggle</text>
+        <text x="220" y="265" text-anchor="middle" fill="#4a6060" font-size="8">Full/Empty via ptr==ptr</text>
+        <text x="220" y="278" text-anchor="middle" fill="#4a6060" font-size="8">always @(negedge clk_i)</text>
+
+        <!-- INPUT SIGNALS -->
+        <line x1="48" y1="110" x2="140" y2="110" stroke="#00e5ff" stroke-width="1" marker-end="url(#arr-c)" stroke-dasharray="4 3"/>
+        <text x="42" y="114" text-anchor="end" fill="#00e5ff" font-size="9">clk_i</text>
+
+        <line x1="48" y1="133" x2="140" y2="133" stroke="#ff4455" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="42" y="137" text-anchor="end" fill="#ff4455" font-size="9">rst_i</text>
+
+        <line x1="48" y1="156" x2="140" y2="156" stroke="#00ff88" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="42" y="160" text-anchor="end" fill="#00ff88" font-size="9">wr_en_i</text>
+
+        <line x1="48" y1="179" x2="140" y2="179" stroke="#ffb800" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="42" y="183" text-anchor="end" fill="#ffb800" font-size="9">rd_en_i</text>
+
+        <line x1="48" y1="202" x2="140" y2="202" stroke="#00ff88" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="42" y="206" text-anchor="end" fill="#00ff88" font-size="9">wdata_i[2:0]</text>
+
+        <!-- INPUT bracket -->
+        <rect x="6" y="100" width="30" height="115" rx="2" fill="none" stroke="#1e2e1e"/>
+        <text x="21" y="163" text-anchor="middle" fill="#4a6060" font-size="8" transform="rotate(-90,21,163)" letter-spacing="2">INPUTS</text>
+
+        <!-- OUTPUT SIGNALS -->
+        <line x1="300" y1="158" x2="390" y2="158" stroke="#00ff88" stroke-width="1.5" marker-end="url(#arr)" filter="url(#glow-g)"/>
+        <text x="396" y="162" fill="#00ff88" font-size="9">rdata_o[2:0]</text>
+
+        <line x1="300" y1="180" x2="390" y2="180" stroke="#ff4455" stroke-width="1.5" marker-end="url(#arr-r)" filter="url(#glow-c)"/>
+        <text x="396" y="184" fill="#ff4455" font-size="9">full_o</text>
+
+        <line x1="300" y1="202" x2="390" y2="202" stroke="#c084fc" stroke-width="1.5" marker-end="url(#arr-p)"/>
+        <text x="396" y="206" fill="#c084fc" font-size="9">empty_o</text>
+
+        <line x1="300" y1="224" x2="390" y2="224" stroke="#ffb800" stroke-width="1.5" marker-end="url(#arr-a)"/>
+        <text x="396" y="228" fill="#ffb800" font-size="9">overflow_o</text>
+
+        <line x1="300" y1="246" x2="390" y2="246" stroke="#ffb800" stroke-width="1" marker-end="url(#arr-a)" stroke-dasharray="3 2"/>
+        <text x="396" y="250" fill="#ffb800" font-size="9">underflow_o</text>
+
+        <!-- OUTPUT bracket -->
+        <rect x="404" y="148" width="30" height="110" rx="2" fill="none" stroke="#1e2e1e"/>
+        <text x="419" y="210" text-anchor="middle" fill="#4a6060" font-size="8" transform="rotate(90,419,210)" letter-spacing="2">OUTPUTS</text>
+
+        <!-- Negedge clock annotation -->
+        <polyline points="48,360 63,360 63,344 78,344 78,360 93,360 93,344 108,344 108,360" fill="none" stroke="#00e5ff" stroke-width="1.2"/>
+        <text x="48" y="378" fill="#00e5ff" font-size="8" letter-spacing="1">CLK (negedge triggered)</text>
+
+        <!-- Toggle pointer annotation -->
+        <line x1="140" y1="396" x2="300" y2="396" stroke="#c084fc" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="220" y="412" text-anchor="middle" fill="#c084fc" font-size="8" letter-spacing="1">POINTER TOGGLE FULL/EMPTY</text>
+        <line x1="140" y1="391" x2="140" y2="401" stroke="#c084fc" stroke-width="1"/>
+        <line x1="300" y1="391" x2="300" y2="401" stroke="#c084fc" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <!-- PARAMS + PORTS -->
+    <div class="arch-details">
+      <table class="param-table">
+        <thead><tr><th>PARAMETER</th><th>DEFAULT</th><th>DESCRIPTION</th></tr></thead>
+        <tbody>
+          <tr><td class="key">depth</td><td class="val">4</td><td>Number of FIFO slots</td></tr>
+          <tr><td class="key">width</td><td class="val">3</td><td>Data word size in bits</td></tr>
+          <tr><td class="key">ptr_width</td><td class="val">$clog2(depth)</td><td>Auto-calculated pointer width</td></tr>
+        </tbody>
+      </table>
+
+      <div class="port-block">
+        <div class="port-block-head">// PORT LIST</div>
+        <table class="port-table">
+          <thead><tr><th>PORT</th><th>DIR</th><th>WIDTH</th><th>FUNCTION</th></tr></thead>
+          <tbody>
+            <tr><td class="in">clk_i</td><td class="in">IN</td><td>1</td><td>System clock</td></tr>
+            <tr><td class="sig">rst_i</td><td class="sig">IN</td><td>1</td><td>Sync active-high reset</td></tr>
+            <tr><td class="in">wr_en_i</td><td class="in">IN</td><td>1</td><td>Write enable</td></tr>
+            <tr><td class="in">rd_en_i</td><td class="in">IN</td><td>1</td><td>Read enable</td></tr>
+            <tr><td class="in">wdata_i</td><td class="in">IN</td><td>width</td><td>Write data bus</td></tr>
+            <tr><td class="out">rdata_o</td><td class="out">OUT</td><td>width</td><td>Read data output</td></tr>
+            <tr><td class="fl">full_o</td><td class="fl">OUT</td><td>1</td><td>FIFO full flag</td></tr>
+            <tr><td class="fl">empty_o</td><td class="fl">OUT</td><td>1</td><td>FIFO empty flag</td></tr>
+            <tr><td class="sig">overflow_o</td><td class="sig">OUT</td><td>1</td><td>Write when full</td></tr>
+            <tr><td class="sig">underflow_o</td><td class="sig">OUT</td><td>1</td><td>Read when empty</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORKING PRINCIPLE -->
+<section id="working">
+  <div class="sec-label">MODULE_02 &nbsp; OPERATION</div>
+  <h2 class="sec-title">WORKING <span>PRINCIPLE</span></h2>
+  <div class="phases-grid reveal">
+    <div class="phase-card rst-c">
+      <div class="phase-icon">⟳</div>
+      <div class="phase-title">RESET PHASE</div>
+      <ul class="phase-conds">
+        <li>Triggered when <code style="color:var(--cyan)">rst_i = 1</code></li>
+        <li>All FIFO slots cleared to 0</li>
+        <li><code style="color:var(--cyan)">empty_o</code> asserted, <code style="color:var(--cyan)">full_o</code> deasserted</li>
+        <li>Both pointers and toggles reset</li>
+        <li>Synchronous on <code style="color:var(--cyan)">negedge clk</code></li>
+      </ul>
+    </div>
+    <div class="phase-card wr-c">
+      <div class="phase-icon">✎</div>
+      <div class="phase-title">WRITE OPERATION</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--green)">wr_en_i = 1</code></li>
+        <li>If <code style="color:var(--green)">full_o = 0</code>: write <code style="color:var(--green)">wdata_i → fifo[wr_pntr]</code></li>
+        <li><code style="color:var(--green)">wr_pntr</code> increments, wraps at depth−1</li>
+        <li><code style="color:var(--green)">wr_tggle</code> flips on wrap-around</li>
+        <li>If <code style="color:var(--green)">full_o = 1</code>: <code style="color:var(--red)">overflow_o</code> asserted</li>
+      </ul>
+    </div>
+    <div class="phase-card rd-c">
+      <div class="phase-icon">◈</div>
+      <div class="phase-title">READ OPERATION</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--amber)">rd_en_i = 1</code></li>
+        <li>If <code style="color:var(--amber)">empty_o = 0</code>: read <code style="color:var(--amber)">fifo[rd_pntr] → rdata_o</code></li>
+        <li><code style="color:var(--amber)">rd_pntr</code> increments, wraps at depth−1</li>
+        <li><code style="color:var(--amber)">rd_tggle</code> flips on wrap-around</li>
+        <li>If <code style="color:var(--amber)">empty_o = 1</code>: <code style="color:var(--red)">underflow_o</code> asserted</li>
+      </ul>
+    </div>
+    <div class="phase-card full-c">
+      <div class="phase-icon">⊠</div>
+      <div class="phase-title">FULL DETECTION</div>
+      <ul class="phase-conds">
+        <li>Combinational <code style="color:var(--red)">always @(*)</code></li>
+        <li><code style="color:var(--red)">wr_pntr == rd_pntr</code></li>
+        <li><code style="color:var(--red)">wr_tggle != rd_tggle</code></li>
+        <li>Both conditions must be true</li>
+        <li>Toggle distinguishes full vs empty</li>
+      </ul>
+    </div>
+    <div class="phase-card empty-c">
+      <div class="phase-icon">⊡</div>
+      <div class="phase-title">EMPTY DETECTION</div>
+      <ul class="phase-conds">
+        <li>Combinational <code style="color:var(--purple)">always @(*)</code></li>
+        <li><code style="color:var(--purple)">wr_pntr == rd_pntr</code></li>
+        <li><code style="color:var(--purple)">wr_tggle == rd_tggle</code></li>
+        <li>Both pointers same, same toggle</li>
+        <li>Asserted on reset by default</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- TESTCASES -->
+<section id="testcases">
+  <div class="sec-label">MODULE_03 &nbsp; TESTPLAN</div>
+  <h2 class="sec-title">DIRECTED <span>TESTCASES</span></h2>
+  <div class="tc-grid reveal">
+    <div class="tc-card tc-full">
+      <span class="tc-tag">TC_01</span>
+      <div class="tc-name">FULL</div>
+      <div class="tc-desc">Writes exactly <code style="color:var(--green)">depth</code> items. Verifies <code style="color:var(--green)">full_o</code> asserts after the last write slot is occupied.</div>
+      <div class="tc-seq">Sequence: <span>write(depth)</span></div>
+    </div>
+    <div class="tc-card tc-empty">
+      <span class="tc-tag">TC_02</span>
+      <div class="tc-name">EMPTY</div>
+      <div class="tc-desc">Fills FIFO completely, then reads all entries. Verifies <code style="color:var(--cyan)">empty_o</code> reasserts after all data is drained.</div>
+      <div class="tc-seq">Sequence: <span>write(depth) → read(depth)</span></div>
+    </div>
+    <div class="tc-card tc-over">
+      <span class="tc-tag">TC_03</span>
+      <div class="tc-name">OVERFLOW</div>
+      <div class="tc-desc">Attempts to write <code style="color:var(--red)">depth+1</code> items into a full FIFO. Verifies <code style="color:var(--red)">overflow_o</code> is asserted on the extra write.</div>
+      <div class="tc-seq">Sequence: <span>write(depth+1)</span></div>
+    </div>
+    <div class="tc-card tc-under">
+      <span class="tc-tag">TC_04</span>
+      <div class="tc-name">UNDERFLOW</div>
+      <div class="tc-desc">Overflows first, then reads <code style="color:var(--amber)">depth+1</code> times. Verifies <code style="color:var(--amber)">underflow_o</code> on the extra read from empty FIFO.</div>
+      <div class="tc-seq">Sequence: <span>write(depth+1) → read(depth+1)</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- WAVEFORM -->
+<section id="waveform">
+  <div class="sec-label">MODULE_04 &nbsp; SIMULATION</div>
+  <h2 class="sec-title">WAVEFORM <span>OUTPUT</span></h2>
+  <div class="reveal">
+    <div class="wave-note">
+      ⚡ Captured from ModelSim — Testcase: <strong style="color:var(--green)">FULL</strong>. Run via <code style="color:var(--amber)">vsim tb +testcase=FULL</code> from <code>run.do</code>.
+    </div>
+    <div class="wave-img-wrap">
+      <div class="wave-label">ModelSim :: fifo_testcase.v — TC: FULL</div>
+      <img
+        src="https://github.com/monish-sr/sync_fifo--verilog/raw/main/Waveform%20-%20FIFO%20(Testcase%20-%20Full).png"
+        alt="ModelSim Waveform - Sync FIFO Testcase Full"
+        loading="lazy"
+        style="width:100%;display:block;filter:brightness(1.05) saturate(1.1)"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      >
+      <div style="display:none;padding:40px;text-align:center;color:var(--muted);flex-direction:column;gap:10px;align-items:center">
+        <span style="font-size:24px">📊</span>
+        <span style="font-size:12px">Waveform image — view on GitHub</span>
+        <a href="https://github.com/monish-sr/sync_fifo--verilog/blob/main/Waveform%20-%20FIFO%20(Testcase%20-%20Full).png" target="_blank" class="btn btn-cyan" style="margin-top:8px;font-size:11px">OPEN WAVEFORM</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTBENCH -->
+<section id="testbench">
+  <div class="sec-label">MODULE_05 &nbsp; VERIFICATION</div>
+  <h2 class="sec-title">TESTBENCH <span>TASKS</span></h2>
+  <div class="tb-grid reveal">
+    <div class="tb-task t1">
+      <div class="tb-task-head">
+        <div class="tb-task-icon">⟳</div>
+        <span class="tb-task-name">task reset()</span>
+      </div>
+      <ul>
+        <li>Zeroes all control signals</li>
+        <li>Asserts <code style="color:var(--cyan)">rst_i = 1</code></li>
+        <li>Holds 2 <code style="color:var(--cyan)">negedge clk</code> cycles</li>
+        <li>Deasserts reset to begin DUT op</li>
+      </ul>
+    </div>
+    <div class="tb-task t2">
+      <div class="tb-task-head">
+        <div class="tb-task-icon">✎</div>
+        <span class="tb-task-name">task write(num)</span>
+      </div>
+      <ul>
+        <li>Loops <code style="color:var(--green)">num</code> iterations</li>
+        <li>Drives <code style="color:var(--green)">$random()</code> per negedge</li>
+        <li>Sets <code style="color:var(--green)">wr_en_i = 1</code></li>
+        <li>Parameterized — reused by all TCs</li>
+      </ul>
+    </div>
+    <div class="tb-task t3">
+      <div class="tb-task-head">
+        <div class="tb-task-icon">◈</div>
+        <span class="tb-task-name">task read(num)</span>
+      </div>
+      <ul>
+        <li>Loops <code style="color:var(--amber)">num</code> iterations</li>
+        <li>Asserts <code style="color:var(--amber)">rd_en_i = 1</code> per negedge</li>
+        <li>Parameterized — reused by all TCs</li>
+        <li>Simulation ends at <code style="color:var(--amber)">#1000</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- run.do box -->
+  <div class="run-do-box reveal">
+    <div class="run-do-head">⚙ run.do — ModelSim Script</div>
+    <div class="run-do-body">
+      <pre style="font-size:12px;line-height:1.9"><span style="color:var(--cyan)">vlib</span> <span style="color:var(--green)">work</span>
+<span style="color:var(--cyan)">vlog</span> <span style="color:var(--amber)">fifo_testcase.v</span>
+<span style="color:var(--cyan)">vsim</span> -novopt -suppress 12110 <span style="color:var(--green)">tb</span> <span style="color:var(--red)">+testcase=FULL</span>
+<span style="color:var(--cyan)">add wave</span> <span style="color:var(--muted)">*</span>
+<span style="color:var(--cyan)">run</span> -all</pre>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px">Change <code style="color:var(--red)">+testcase=FULL</code> to <code style="color:var(--amber)">EMPTY</code>, <code style="color:var(--amber)">OVERFLOW</code>, or <code style="color:var(--amber)">UNDERFLOW</code> to run other test scenarios.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SOURCE CODE -->
+<section id="code">
+  <div class="sec-label">MODULE_06 &nbsp; SOURCE</div>
+  <h2 class="sec-title">SOURCE <span>CODE</span></h2>
+  <div class="reveal">
+    <div class="code-viewer">
+      <div class="code-titlebar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span style="margin-left:8px;">monish-sr / sync_fifo--verilog</span>
+      </div>
+      <div class="code-tabs">
+        <div class="ctab active" onclick="switchTab('design')">fifo.v</div>
+        <div class="ctab" onclick="switchTab('tb')">fifo_testcase.v</div>
+        <div class="ctab" onclick="switchTab('do')">run.do</div>
+      </div>
+      <div class="code-body">
+
+        <pre id="pane-design" class="cpane active"><span class="kw">module</span> <span class="mod">fifo</span> <span class="parm">#(</span><span class="kw">parameter</span> <span class="sig">depth</span> <span class="op">=</span> <span class="num">4</span>, <span class="sig">width</span> <span class="op">=</span> <span class="num">3</span>,
+              <span class="sig">ptr_width</span> <span class="op">=</span> <span class="kw">$clog2</span>(<span class="sig">depth</span>)<span class="parm">)</span>
+  (<span class="sig">clk_i</span>,<span class="sig">rst_i</span>,<span class="sig">wr_en_i</span>,<span class="sig">rd_en_i</span>,<span class="sig">wdata_i</span>,
+   <span class="sig">rdata_o</span>,<span class="sig">full_o</span>,<span class="sig">empty_o</span>,<span class="sig">overflow_o</span>,<span class="sig">underflow_o</span>);
+
+<span class="cmt">// Input and Output Declaration</span>
+<span class="kw">input</span>  <span class="sig">clk_i</span>,<span class="sig">rst_i</span>,<span class="sig">wr_en_i</span>,<span class="sig">rd_en_i</span>;
+<span class="kw">input</span>  [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">wdata_i</span>;
+<span class="kw">output reg</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">rdata_o</span>;
+<span class="kw">output reg</span> <span class="sig">full_o</span>,<span class="sig">empty_o</span>,<span class="sig">overflow_o</span>,<span class="sig">underflow_o</span>;
+
+<span class="kw">reg</span> [<span class="sig">ptr_width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">wr_pntr</span>, <span class="sig">rd_pntr</span>;
+<span class="kw">reg</span> <span class="sig">wr_tggle</span>, <span class="sig">rd_tggle</span>;
+<span class="kw">reg</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] fifo [<span class="sig">depth</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>];
+<span class="kw">integer</span> i;
+
+<span class="cmt">// Toggles on Falling Edge</span>
+<span class="kw">always</span>@(<span class="kw">negedge</span> <span class="sig">clk_i</span>) <span class="kw">begin</span>
+  <span class="kw">if</span>(<span class="sig">rst_i</span>) <span class="kw">begin</span>
+    <span class="sig">full_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;  <span class="sig">empty_o</span> <span class="op">&lt;=</span> <span class="num">1</span>;
+    <span class="sig">overflow_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;  <span class="sig">underflow_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+    <span class="sig">rdata_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+    {<span class="sig">wr_pntr</span>,<span class="sig">rd_pntr</span>,<span class="sig">wr_tggle</span>,<span class="sig">rd_tggle</span>} <span class="op">&lt;=</span> <span class="num">0</span>;
+    <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span><span class="sig">depth</span>; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) fifo[i] <span class="op">&lt;=</span> <span class="num">0</span>;
+  <span class="kw">end</span>
+  <span class="kw">else begin</span>
+    <span class="kw">if</span>(<span class="sig">wr_en_i</span>) <span class="kw">begin</span>
+      <span class="kw">if</span> (<span class="sig">full_o</span>) <span class="sig">overflow_o</span> <span class="op">&lt;=</span> <span class="num">1</span>;
+      <span class="kw">else begin</span>
+        fifo[<span class="sig">wr_pntr</span>] <span class="op">&lt;=</span> <span class="sig">wdata_i</span>;
+        <span class="kw">if</span>(<span class="sig">wr_pntr</span> <span class="op">==</span> <span class="sig">depth</span><span class="op">-</span><span class="num">1</span>) <span class="kw">begin</span>
+          <span class="sig">wr_tggle</span> <span class="op">&lt;=</span> <span class="op">~</span><span class="sig">wr_tggle</span>;  <span class="sig">wr_pntr</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+        <span class="kw">end</span>
+        <span class="kw">else</span> <span class="sig">wr_pntr</span> <span class="op">&lt;=</span> <span class="sig">wr_pntr</span> <span class="op">+</span> <span class="num">1</span>;
+      <span class="kw">end</span>
+    <span class="kw">end</span>
+    <span class="kw">if</span>(<span class="sig">rd_en_i</span>) <span class="kw">begin</span>
+      <span class="kw">if</span>(<span class="sig">empty_o</span>) <span class="sig">underflow_o</span> <span class="op">&lt;=</span> <span class="num">1</span>;
+      <span class="kw">else begin</span>
+        <span class="sig">rdata_o</span> <span class="op">&lt;=</span> fifo[<span class="sig">rd_pntr</span>];
+        <span class="kw">if</span>(<span class="sig">rd_pntr</span> <span class="op">==</span> <span class="sig">depth</span><span class="op">-</span><span class="num">1</span>) <span class="kw">begin</span>
+          <span class="sig">rd_tggle</span> <span class="op">&lt;=</span> <span class="op">~</span><span class="sig">rd_tggle</span>;  <span class="sig">rd_pntr</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+        <span class="kw">end</span>
+        <span class="kw">else</span> <span class="sig">rd_pntr</span> <span class="op">&lt;=</span> <span class="sig">rd_pntr</span> <span class="op">+</span> <span class="num">1</span>;
+      <span class="kw">end</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="cmt">// Combinational Full/Empty Detection</span>
+<span class="kw">always</span>@(*) <span class="kw">begin</span>
+  <span class="sig">empty_o</span> <span class="op">=</span> <span class="num">0</span>;  <span class="sig">full_o</span> <span class="op">=</span> <span class="num">0</span>;
+  <span class="kw">if</span>(<span class="sig">wr_pntr</span><span class="op">==</span><span class="sig">rd_pntr</span> <span class="op">&amp;&amp;</span> <span class="sig">wr_tggle</span><span class="op">==</span><span class="sig">rd_tggle</span>) <span class="sig">empty_o</span> <span class="op">=</span> <span class="num">1</span>;
+  <span class="kw">if</span>(<span class="sig">wr_pntr</span><span class="op">==</span><span class="sig">rd_pntr</span> <span class="op">&amp;&amp;</span> <span class="sig">wr_tggle</span><span class="op">!=</span><span class="sig">rd_tggle</span>) <span class="sig">full_o</span>  <span class="op">=</span> <span class="num">1</span>;
+<span class="kw">end</span>
+
+<span class="kw">endmodule</span></pre>
+
+        <pre id="pane-tb" class="cpane"><span class="str">`include "fifo.v"</span>
+
+<span class="kw">module</span> <span class="mod">tb</span> <span class="parm">#(</span><span class="kw">parameter</span> <span class="sig">depth</span><span class="op">=</span><span class="num">4</span>, <span class="sig">width</span><span class="op">=</span><span class="num">3</span>,
+            <span class="sig">ptr_width</span><span class="op">=</span><span class="kw">$clog2</span>(<span class="sig">depth</span>)<span class="parm">)</span>;
+
+<span class="kw">reg</span>  <span class="sig">clk_i</span>,<span class="sig">rst_i</span>,<span class="sig">wr_en_i</span>,<span class="sig">rd_en_i</span>;
+<span class="kw">reg</span>  [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">wdata_i</span>;
+<span class="kw">wire</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">rdata_o</span>;
+<span class="kw">wire</span> <span class="sig">full_o</span>,<span class="sig">empty_o</span>,<span class="sig">overflow_o</span>,<span class="sig">underflow_o</span>;
+<span class="kw">integer</span> i;
+<span class="kw">reg</span> [<span class="num">8</span><span class="op">*</span><span class="num">10</span>:<span class="num">0</span>] testcase;
+
+<span class="cmt">// DUT Instantiation</span>
+<span class="mod">fifo</span> <span class="parm">#(.depth(depth),.width(width),.ptr_width(ptr_width))</span>
+  dut(.<span class="sig">clk_i</span>(<span class="sig">clk_i</span>), .<span class="sig">rst_i</span>(<span class="sig">rst_i</span>),
+      .<span class="sig">wr_en_i</span>(<span class="sig">wr_en_i</span>), .<span class="sig">rd_en_i</span>(<span class="sig">rd_en_i</span>),
+      .<span class="sig">wdata_i</span>(<span class="sig">wdata_i</span>), .<span class="sig">rdata_o</span>(<span class="sig">rdata_o</span>),
+      .<span class="sig">full_o</span>(<span class="sig">full_o</span>), .<span class="sig">empty_o</span>(<span class="sig">empty_o</span>),
+      .<span class="sig">overflow_o</span>(<span class="sig">overflow_o</span>), .<span class="sig">underflow_o</span>(<span class="sig">underflow_o</span>));
+
+<span class="kw">always</span> <span class="num">#5</span> <span class="sig">clk_i</span> <span class="op">=</span> <span class="op">~</span><span class="sig">clk_i</span>;
+
+<span class="cmt">// ── RESET TASK ──────────────────────────</span>
+<span class="kw">task</span> <span class="mod">reset</span>();
+<span class="kw">begin</span>
+  <span class="sig">wdata_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">wr_en_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">rd_en_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">rst_i</span><span class="op">=</span><span class="num">1</span>;
+  <span class="kw">repeat</span>(<span class="num">2</span>) @(<span class="kw">negedge</span> <span class="sig">clk_i</span>);
+  <span class="sig">rst_i</span><span class="op">=</span><span class="num">0</span>;
+<span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="cmt">// ── WRITE TASK ──────────────────────────</span>
+<span class="kw">task</span> <span class="mod">write</span>(<span class="kw">input integer</span> num);
+<span class="kw">begin</span>
+  <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span>num; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) <span class="kw">begin</span>
+    @(<span class="kw">negedge</span> <span class="sig">clk_i</span>);
+    <span class="sig">wr_en_i</span> <span class="op">=</span> <span class="num">1</span>; <span class="sig">wdata_i</span> <span class="op">=</span> <span class="kw">$random</span>();
+  <span class="kw">end</span>
+<span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="cmt">// ── READ TASK ───────────────────────────</span>
+<span class="kw">task</span> <span class="mod">read</span>(<span class="kw">input integer</span> num);
+<span class="kw">begin</span>
+  <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span>num; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) <span class="kw">begin</span>
+    @(<span class="kw">negedge</span> <span class="sig">clk_i</span>);
+    <span class="sig">rd_en_i</span> <span class="op">=</span> <span class="num">1</span>;
+  <span class="kw">end</span>
+<span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="kw">initial begin</span>
+  <span class="sig">clk_i</span> <span class="op">=</span> <span class="num">0</span>;
+  <span class="mod">reset</span>();
+  <span class="kw">if</span>(!<span class="kw">$value$plusargs</span>(<span class="str">"testcase=%s"</span>, testcase))
+    <span class="kw">$display</span>(<span class="str">"FAILED TO GET TESTCASE FROM THE USER"</span>);
+  <span class="kw">case</span>(testcase)
+    <span class="str">"FULL"</span>:      <span class="mod">write</span>(<span class="sig">depth</span>);
+    <span class="str">"EMPTY"</span>:     <span class="kw">begin</span> <span class="mod">write</span>(<span class="sig">depth</span>); <span class="mod">read</span>(<span class="sig">depth</span>); <span class="kw">end</span>
+    <span class="str">"OVERFLOW"</span>:  <span class="mod">write</span>(<span class="sig">depth</span><span class="op">+</span><span class="num">1</span>);
+    <span class="str">"UNDERFLOW"</span>: <span class="kw">begin</span> <span class="mod">write</span>(<span class="sig">depth</span><span class="op">+</span><span class="num">1</span>); <span class="mod">read</span>(<span class="sig">depth</span><span class="op">+</span><span class="num">1</span>); <span class="kw">end</span>
+    <span class="kw">default</span>:     <span class="kw">$display</span>(<span class="str">"NO TC"</span>);
+  <span class="kw">endcase</span>
+<span class="kw">end</span>
+
+<span class="kw">initial</span> <span class="num">#1000</span> <span class="kw">$finish</span>();
+<span class="kw">endmodule</span></pre>
+
+        <pre id="pane-do" class="cpane"><span class="cmt"># ModelSim run script — run.do</span>
+
+<span class="sig">vlib</span> <span class="mod">work</span>
+<span class="sig">vlog</span> <span class="str">fifo_testcase.v</span>
+<span class="sig">vsim</span> -novopt -suppress <span class="num">12110</span> <span class="mod">tb</span> <span class="op">+testcase=</span><span class="str">FULL</span>
+<span class="sig">add wave</span> <span class="op">*</span>
+<span class="sig">run</span> -all
+
+<span class="cmt"># Change +testcase= to: FULL | EMPTY | OVERFLOW | UNDERFLOW</span></pre>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FILES -->
+<section id="files">
+  <div class="sec-label">MODULE_07 &nbsp; REPOSITORY</div>
+  <h2 class="sec-title">FILE <span>TREE</span></h2>
+  <div class="file-list reveal">
+    <a class="file-row" href="https://github.com/monish-sr/sync_fifo--verilog/blob/main/fifo.v" target="_blank">
+      <span class="file-icon">📄</span>
+      <span class="file-name">fifo.v</span>
+      <span class="file-meta"><span class="file-size">1.60 KB</span> &nbsp;·&nbsp; 68 lines &nbsp;·&nbsp; Main FIFO design module</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/sync_fifo--verilog/blob/main/fifo_testcase.v" target="_blank">
+      <span class="file-icon">🧪</span>
+      <span class="file-name">fifo_testcase.v</span>
+      <span class="file-meta"><span class="file-size">1.59 KB</span> &nbsp;·&nbsp; 89 lines &nbsp;·&nbsp; Testbench (3 tasks, 4 testcases)</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/sync_fifo--verilog/blob/main/run.do" target="_blank">
+      <span class="file-icon">⚙</span>
+      <span class="file-name">run.do</span>
+      <span class="file-meta"><span class="file-size">105 B</span> &nbsp;·&nbsp; 6 lines &nbsp;·&nbsp; ModelSim run script</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/sync_fifo--verilog/blob/main/Waveform%20-%20FIFO%20(Testcase%20-%20Full).png" target="_blank">
+      <span class="file-icon">📊</span>
+      <span class="file-name">Waveform - FIFO (Testcase - Full).png</span>
+      <span class="file-meta">ModelSim waveform — TC: FULL</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/sync_fifo--verilog/blob/main/README.md" target="_blank">
+      <span class="file-icon">📋</span>
+      <span class="file-name">README.md</span>
+      <span class="file-meta">Project documentation</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/sync_fifo--verilog/blob/main/LICENSE" target="_blank">
+      <span class="file-icon">⚖</span>
+      <span class="file-name">LICENSE</span>
+      <span class="file-meta">MIT License</span>
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <a href="https://github.com/monish-sr/sync_fifo--verilog" target="_blank">github.com/monish-sr/sync_fifo--verilog</a>
+  </div>
+  <div>Built by <span>Monish S R</span> &nbsp;|&nbsp; Verilog HDL &nbsp;|&nbsp; MIT License</div>
+  <div><a href="https://github.com/monish-sr" target="_blank">← monish-sr</a></div>
+</footer>
+
+<script>
+function tick(){
+  const n=new Date(),p=v=>String(v).padStart(2,'0');
+  document.getElementById('live-clock').textContent=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
+}
+setInterval(tick,1000);tick();
+
+function switchTab(id){
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.cpane').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${id}')"]`).classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+}
+
+const ro=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');ro.unobserve(e.target);}});
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+</script>
+</body>
+</html>

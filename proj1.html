@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>memory-verilog :: monish-sr</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #080b0f;
+  --bg1:     #0d1117;
+  --bg2:     #111820;
+  --bg3:     #0a1020;
+  --green:   #00ff88;
+  --green-d: #00cc6a;
+  --cyan:    #00e5ff;
+  --cyan-d:  #00b8cc;
+  --amber:   #ffb800;
+  --red:     #ff4455;
+  --purple:  #c084fc;
+  --dim:     #1e2e1e;
+  --muted:   #4a6060;
+  --text:    #c8d8c8;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-ui: 'Oxanium', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:14px;line-height:1.6;overflow-x:hidden;cursor:crosshair}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,.012) 2px,rgba(0,255,136,.012) 4px);pointer-events:none;z-index:9999}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--green)}
+
+/* NAVBAR */
+#navbar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(8,11,15,.94);border-bottom:1px solid var(--green);
+  backdrop-filter:blur(10px);display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;height:44px;
+  font-size:12px;box-shadow:0 0 24px rgba(0,255,136,.15);
+}
+.nav-brand{color:var(--green);font-family:var(--font-ui);font-weight:700;letter-spacing:2px;text-decoration:none}
+.nav-brand span{color:var(--amber)}
+.nav-crumb{color:var(--muted);display:flex;align-items:center;gap:8px;font-size:11px}
+.nav-crumb a{color:var(--cyan);text-decoration:none}
+.nav-crumb a:hover{color:var(--green)}
+.nav-right{display:flex;gap:16px;align-items:center;font-size:11px;color:var(--muted)}
+#live-clock{color:var(--cyan);font-family:var(--font-mono);letter-spacing:1px}
+.nav-badge{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--green);padding:2px 8px;border-radius:2px;font-size:10px;letter-spacing:1px}
+
+/* HERO */
+#hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:80px 8vw 40px;position:relative;overflow:hidden;
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  mask-image:radial-gradient(ellipse 90% 80% at 30% 50%,black,transparent);
+}
+.scanbeam{position:absolute;top:0;left:-100%;width:50%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanbeam 7s linear infinite;opacity:.35}
+@keyframes scanbeam{to{left:200%}}
+.scanbeam2{top:33%;animation-delay:3.5s;background:linear-gradient(90deg,transparent,var(--green),transparent)}
+
+.hero-content{position:relative;z-index:1;max-width:900px;width:100%}
+.hero-eyebrow{font-size:11px;color:var(--green);letter-spacing:4px;text-transform:uppercase;margin-bottom:14px;opacity:0;animation:fadeUp .5s .3s forwards}
+.hero-eyebrow span{color:var(--muted)}
+
+.hero-title{
+  font-family:var(--font-display);
+  font-size:clamp(48px,9vw,110px);
+  line-height:.9;color:var(--green);
+  text-shadow:0 0 50px rgba(0,255,136,.4);
+  opacity:0;animation:fadeUp .5s .5s forwards;
+}
+.hero-title .sub{color:var(--cyan);text-shadow:0 0 50px rgba(0,229,255,.4)}
+
+.hero-tagline{
+  font-family:var(--font-ui);font-size:clamp(13px,1.5vw,16px);
+  color:var(--text);letter-spacing:2px;margin:18px 0 28px;
+  opacity:0;animation:fadeUp .5s .7s forwards;
+  border-left:2px solid var(--amber);padding-left:14px;
+  max-width:620px;line-height:1.8;
+}
+
+/* META PILLS */
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;opacity:0;animation:fadeUp .5s .9s forwards}
+.mpill{
+  font-size:10px;letter-spacing:1.5px;padding:4px 12px;
+  border:1px solid;border-radius:2px;font-family:var(--font-ui);
+  display:flex;align-items:center;gap:6px;
+}
+.mpill.g{color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.06)}
+.mpill.c{color:var(--cyan);border-color:rgba(0,229,255,.3);background:rgba(0,229,255,.06)}
+.mpill.a{color:var(--amber);border-color:rgba(255,184,0,.3);background:rgba(255,184,0,.06)}
+
+/* STAT STRIP */
+.stat-strip{
+  display:flex;gap:0;flex-wrap:wrap;
+  border:1px solid var(--dim);background:var(--bg1);
+  margin-bottom:36px;opacity:0;animation:fadeUp .5s 1.1s forwards;
+}
+.stat-cell{
+  flex:1;min-width:120px;padding:14px 20px;
+  border-right:1px solid var(--dim);
+  display:flex;flex-direction:column;gap:4px;
+  transition:background .2s;
+}
+.stat-cell:last-child{border-right:none}
+.stat-cell:hover{background:rgba(0,255,136,.04)}
+.stat-num{font-family:var(--font-display);font-size:28px;color:var(--green);letter-spacing:1px}
+.stat-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;opacity:0;animation:fadeUp .5s 1.2s forwards}
+.btn{font-family:var(--font-mono);font-size:12px;letter-spacing:2px;padding:10px 22px;border:1px solid;text-decoration:none;cursor:pointer;transition:all .2s;background:transparent;display:inline-flex;align-items:center;gap:8px;text-transform:uppercase}
+.btn-green{color:var(--green);border-color:var(--green)}
+.btn-green:hover{background:var(--green);color:var(--bg);box-shadow:0 0 20px var(--green)}
+.btn-cyan{color:var(--cyan);border-color:var(--cyan)}
+.btn-cyan:hover{background:var(--cyan);color:var(--bg);box-shadow:0 0 20px var(--cyan)}
+.btn-amber{color:var(--amber);border-color:var(--amber)}
+.btn-amber:hover{background:var(--amber);color:var(--bg);box-shadow:0 0 20px var(--amber)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{to{opacity:1}}
+
+/* SECTIONS */
+section{padding:72px 8vw;position:relative}
+.sec-label{font-size:10px;color:var(--green);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.sec-label::before{content:'//';color:var(--amber)}
+.sec-label::after{content:'';flex:1;max-width:60px;height:1px;background:var(--green)}
+.sec-title{font-family:var(--font-display);font-size:clamp(32px,4.5vw,56px);color:#fff;letter-spacing:2px;line-height:1;margin-bottom:40px}
+.sec-title span{color:var(--green)}
+
+/* ARCHITECTURE DIAGRAM */
+#overview{background:var(--bg1)}
+.arch-wrap{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+@media(max-width:760px){.arch-wrap{grid-template-columns:1fr}}
+
+.arch-diagram{
+  background:var(--bg3);border:1px solid var(--dim);padding:28px;
+  position:relative;overflow:hidden;
+}
+.arch-diagram::before{content:'// BLOCK_DIAGRAM';position:absolute;top:0;right:0;font-size:9px;color:var(--muted);letter-spacing:2px;padding:6px 10px;background:var(--bg2)}
+
+/* SVG Diagram embedded */
+.diag-svg{width:100%;max-width:420px;display:block;margin:0 auto}
+
+.arch-details{display:flex;flex-direction:column;gap:16px}
+.param-table{width:100%;border-collapse:collapse;font-size:12px}
+.param-table th{text-align:left;color:var(--amber);font-weight:600;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--dim);font-family:var(--font-ui);letter-spacing:1px;font-size:10px}
+.param-table td{padding:8px 12px;border-bottom:1px solid rgba(42,58,42,.3);color:var(--text);vertical-align:top}
+.param-table tr:hover td{background:rgba(0,255,136,.03)}
+.param-table .key{color:var(--cyan);font-weight:600}
+.param-table .val{color:var(--green)}
+
+/* PORT TABLE */
+.port-block{background:var(--bg2);border:1px solid var(--dim);overflow:hidden}
+.port-block-head{background:var(--bg3);border-bottom:1px solid var(--dim);padding:8px 14px;font-size:10px;color:var(--amber);letter-spacing:2px;font-family:var(--font-ui)}
+.port-table{width:100%;border-collapse:collapse;font-size:11px}
+.port-table th{text-align:left;color:var(--muted);padding:7px 12px;background:var(--bg3);font-weight:400;letter-spacing:1px}
+.port-table td{padding:6px 12px;border-bottom:1px solid rgba(42,58,42,.25);color:var(--text)}
+.port-table .in{color:var(--cyan)}
+.port-table .out{color:var(--green)}
+.port-table .sig{color:var(--amber)}
+
+/* WORKING PRINCIPLE */
+#working{background:var(--bg)}
+.phases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.phase-card{
+  background:var(--bg1);border:1px solid var(--dim);padding:20px;
+  position:relative;overflow:hidden;transition:border-color .3s,transform .3s;
+  cursor:default;
+}
+.phase-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;transform:scaleX(0);transition:transform .3s}
+.phase-card.reset-c::before{background:var(--cyan)}
+.phase-card.write-c::before{background:var(--green)}
+.phase-card.read-c::before{background:var(--amber)}
+.phase-card.hsk-c::before{background:var(--purple)}
+.phase-card:hover{transform:translateY(-4px)}
+.phase-card.reset-c:hover{border-color:var(--cyan)}
+.phase-card.write-c:hover{border-color:var(--green)}
+.phase-card.read-c:hover{border-color:var(--amber)}
+.phase-card.hsk-c:hover{border-color:var(--purple)}
+.phase-card:hover::before{transform:scaleX(1)}
+.phase-icon{font-size:22px;margin-bottom:10px}
+.phase-title{font-family:var(--font-ui);font-size:13px;font-weight:700;margin-bottom:10px}
+.phase-card.reset-c .phase-title{color:var(--cyan)}
+.phase-card.write-c .phase-title{color:var(--green)}
+.phase-card.read-c .phase-title{color:var(--amber)}
+.phase-card.hsk-c .phase-title{color:var(--purple)}
+.phase-conds{list-style:none;font-size:11px;color:var(--text)}
+.phase-conds li{padding:3px 0;display:flex;gap:6px;align-items:flex-start}
+.phase-conds li::before{content:'▸';flex-shrink:0;margin-top:1px}
+.phase-card.reset-c .phase-conds li::before{color:var(--cyan)}
+.phase-card.write-c .phase-conds li::before{color:var(--green)}
+.phase-card.read-c .phase-conds li::before{color:var(--amber)}
+.phase-card.hsk-c .phase-conds li::before{color:var(--purple)}
+
+/* TIMING / WAVEFORM SECTION */
+#waveform{background:var(--bg2)}
+.wave-note{font-size:12px;color:var(--muted);margin-bottom:20px;padding:10px 16px;border-left:2px solid var(--amber);background:rgba(255,184,0,.04)}
+.wave-placeholder{
+  background:var(--bg3);border:1px solid var(--dim);padding:32px 20px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.wave-img-wrap{
+  background:var(--bg3);border:1px solid var(--dim);
+  padding:0;overflow:hidden;position:relative;
+}
+.wave-img-wrap img{width:100%;display:block;filter:hue-rotate(0deg) brightness(1.1)}
+.wave-label{
+  position:absolute;top:8px;left:8px;
+  font-size:9px;color:var(--green);letter-spacing:2px;
+  background:rgba(8,11,15,.8);padding:3px 8px;border:1px solid var(--dim);
+}
+
+/* TESTBENCH */
+#testbench{background:var(--bg1)}
+.tb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:32px}
+@media(max-width:760px){.tb-grid{grid-template-columns:1fr}}
+.tb-task{
+  background:var(--bg2);border:1px solid var(--dim);padding:18px;
+  position:relative;overflow:hidden;transition:border-color .3s;
+}
+.tb-task:hover{border-color:var(--cyan)}
+.tb-task-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tb-task-icon{width:28px;height:28px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.tb-task.t1 .tb-task-icon{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3)}
+.tb-task.t2 .tb-task-icon{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3)}
+.tb-task.t3 .tb-task-icon{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3)}
+.tb-task-name{font-family:var(--font-ui);font-size:13px;font-weight:700}
+.tb-task.t1 .tb-task-name{color:var(--cyan)}
+.tb-task.t2 .tb-task-name{color:var(--green)}
+.tb-task.t3 .tb-task-name{color:var(--amber)}
+.tb-task ul{list-style:none;font-size:11px;color:var(--text)}
+.tb-task li{padding:3px 0;display:flex;gap:8px}
+.tb-task li::before{content:'—';color:var(--muted);flex-shrink:0}
+
+/* CODE VIEWER */
+.code-viewer{background:var(--bg);border:1px solid var(--dim);overflow:hidden}
+.code-titlebar{
+  background:var(--bg3);border-bottom:1px solid var(--dim);
+  padding:8px 16px;display:flex;align-items:center;gap:10px;
+  font-size:11px;color:var(--muted);
+}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
+.code-tabs{display:flex;border-bottom:1px solid var(--dim)}
+.ctab{
+  padding:8px 18px;font-size:11px;cursor:pointer;
+  border-right:1px solid var(--dim);color:var(--muted);
+  font-family:var(--font-mono);transition:color .2s,background .2s;
+  letter-spacing:.5px;
+}
+.ctab:hover{color:var(--text);background:rgba(0,255,136,.03)}
+.ctab.active{color:var(--green);background:rgba(0,255,136,.06);border-bottom:2px solid var(--green)}
+.code-body{
+  padding:20px;overflow-x:auto;font-size:12px;line-height:1.75;
+  max-height:420px;overflow-y:auto;
+}
+.code-body::-webkit-scrollbar{width:4px;height:4px}
+.code-body::-webkit-scrollbar-thumb{background:var(--green)}
+.cpane{display:none}.cpane.active{display:block}
+
+/* Syntax highlight classes */
+.kw{color:var(--purple)}.mod{color:var(--cyan)}.sig{color:var(--green)}
+.num{color:var(--amber)}.cmt{color:var(--muted);font-style:italic}
+.parm{color:#f97316}.op{color:var(--amber)}.str{color:var(--amber)}
+
+/* FILES */
+#files{background:var(--bg)}
+.file-list{display:flex;flex-direction:column;gap:8px;max-width:640px}
+.file-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--bg1);border:1px solid var(--dim);
+  padding:12px 16px;transition:border-color .2s,background .2s;
+  text-decoration:none;
+}
+.file-row:hover{border-color:var(--green);background:rgba(0,255,136,.03)}
+.file-icon{font-size:16px;flex-shrink:0}
+.file-name{color:var(--cyan);font-size:13px;flex:1}
+.file-meta{font-size:10px;color:var(--muted);text-align:right}
+.file-size{color:var(--amber)}
+
+/* FOOTER */
+footer{
+  background:var(--bg3);border-top:1px solid var(--dim);
+  padding:20px 8vw;display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted);
+}
+footer span{color:var(--green)}
+footer a{color:var(--cyan);text-decoration:none}
+footer a:hover{color:var(--green)}
+
+/* SCROLL REVEAL */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+.reveal.visible{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a href="#" class="nav-brand">MONISH<span>_SR</span></a>
+  <div class="nav-crumb">
+    <a href="index.html">monish-sr</a>
+    <span style="color:var(--dim)">/</span>
+    <span style="color:var(--green)">memory-verilog</span>
+    <span style="color:var(--dim)">:: main</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-badge">Verilog 100%</span>
+    <span id="live-clock">00:00:00</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="scanbeam"></div>
+  <div class="scanbeam scanbeam2"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">// monish-sr / <span>memory-verilog</span> &nbsp;·&nbsp; Verilog &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; 23 Commits</div>
+    <h1 class="hero-title">
+      MEMORY<br>
+      <span class="sub">USING VERILOG</span>
+    </h1>
+    <div class="hero-tagline">
+      Parameterized synchronous memory module with configurable depth &amp; width.<br>
+      Verified via directed testbench using a valid-ready handshake protocol.
+    </div>
+    <div class="meta-row">
+      <span class="mpill g">⬡ depth = 16 (configurable)</span>
+      <span class="mpill c">⬡ width = 4 (configurable)</span>
+      <span class="mpill a">⬡ addr_width = $clog2(depth)</span>
+      <span class="mpill g">⬡ Sync Active-High Reset</span>
+      <span class="mpill c">⬡ Valid-Ready Handshake</span>
+    </div>
+    <div class="stat-strip">
+      <div class="stat-cell"><span class="stat-num">37</span><span class="stat-lbl">Design Lines</span></div>
+      <div class="stat-cell"><span class="stat-num">82</span><span class="stat-lbl">Testbench Lines</span></div>
+      <div class="stat-cell"><span class="stat-num">3</span><span class="stat-lbl">TB Tasks</span></div>
+      <div class="stat-cell"><span class="stat-num">16</span><span class="stat-lbl">Memory Depth</span></div>
+      <div class="stat-cell"><span class="stat-num">4</span><span class="stat-lbl">Bit Width</span></div>
+    </div>
+    <div class="hero-btns">
+      <a href="https://github.com/monish-sr/memory-verilog" target="_blank" class="btn btn-green">⬡ VIEW ON GITHUB</a>
+      <a href="#code" class="btn btn-cyan">⟨/⟩ SOURCE CODE</a>
+      <a href="#waveform" class="btn btn-amber">~ WAVEFORM</a>
+    </div>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="sec-label">MODULE_01 &nbsp; ARCHITECTURE</div>
+  <h2 class="sec-title">DESIGN <span>OVERVIEW</span></h2>
+  <div class="arch-wrap reveal">
+
+    <!-- BLOCK DIAGRAM -->
+    <div class="arch-diagram">
+      <svg class="diag-svg" viewBox="0 0 420 380" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+        <defs>
+          <filter id="glow-g"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="glow-c"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#00ff88"/></marker>
+          <marker id="arr-c" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#00e5ff"/></marker>
+          <marker id="arr-a" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ffb800"/></marker>
+        </defs>
+
+        <!-- Background grid -->
+        <rect width="420" height="380" fill="#0a1020"/>
+        <line x1="0" y1="0" x2="420" y2="0" stroke="#1e2e1e" stroke-width="1"/>
+        <line x1="0" y1="380" x2="420" y2="380" stroke="#1e2e1e" stroke-width="1"/>
+
+        <!-- Main memory module box -->
+        <rect x="130" y="100" width="160" height="180" rx="2" fill="#0d1117" stroke="#00ff88" stroke-width="1.5" filter="url(#glow-g)"/>
+        <rect x="130" y="100" width="160" height="24" fill="#00ff88" fill-opacity=".1"/>
+        <text x="210" y="117" text-anchor="middle" fill="#00ff88" font-size="10" letter-spacing="2" font-weight="600">MEMORY MODULE</text>
+        <text x="210" y="138" text-anchor="middle" fill="#4a6060" font-size="9">#(depth=16,width=4)</text>
+
+        <!-- Internal mem array visual -->
+        <rect x="152" y="152" width="116" height="80" rx="1" fill="#111820" stroke="#1e2e1e"/>
+        <text x="210" y="168" text-anchor="middle" fill="#4a6060" font-size="9" letter-spacing="1">reg [3:0] mem [15:0]</text>
+        <!-- mini cell rows -->
+        <rect x="162" y="174" width="96" height="8" rx="1" fill="#1e2e1e"/>
+        <rect x="162" y="186" width="96" height="8" rx="1" fill="#1e2e1e"/>
+        <rect x="162" y="198" width="96" height="8" rx="1" fill="#1e2e1e"/>
+        <rect x="162" y="210" width="96" height="8" rx="1" fill="#1e2e1e"/>
+        <text x="168" y="181" fill="#00ff88" font-size="7">0x0: 0000</text>
+        <text x="168" y="193" fill="#00ff88" font-size="7">0x1: ????</text>
+        <text x="168" y="205" fill="#00e5ff" font-size="7">0x2: ????</text>
+        <text x="168" y="217" fill="#4a6060" font-size="7">... [16 locs]</text>
+
+        <!-- clk label -->
+        <text x="210" y="252" text-anchor="middle" fill="#4a6060" font-size="8">always @(posedge clk_i)</text>
+        <text x="210" y="265" text-anchor="middle" fill="#4a6060" font-size="8">Sync Active-High Reset</text>
+
+        <!-- INPUT SIGNALS (left side) -->
+        <!-- clk -->
+        <line x1="50" y1="120" x2="130" y2="120" stroke="#00e5ff" stroke-width="1" marker-end="url(#arr-c)" stroke-dasharray="4 3"/>
+        <text x="44" y="124" text-anchor="end" fill="#00e5ff" font-size="9">clk_i</text>
+        <!-- rst -->
+        <line x1="50" y1="145" x2="130" y2="145" stroke="#ff4455" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="44" y="149" text-anchor="end" fill="#ff4455" font-size="9">rst_i</text>
+        <!-- valid -->
+        <line x1="50" y1="168" x2="130" y2="168" stroke="#00ff88" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="44" y="172" text-anchor="end" fill="#00ff88" font-size="9">valid_i</text>
+        <!-- wr_rd -->
+        <line x1="50" y1="191" x2="130" y2="191" stroke="#ffb800" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="44" y="195" text-anchor="end" fill="#ffb800" font-size="9">wr_rd_i</text>
+        <!-- wdata -->
+        <line x1="50" y1="214" x2="130" y2="214" stroke="#00ff88" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="44" y="218" text-anchor="end" fill="#00ff88" font-size="9">wdata_i[3:0]</text>
+        <!-- addr -->
+        <line x1="50" y1="237" x2="130" y2="237" stroke="#c084fc" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="44" y="241" text-anchor="end" fill="#c084fc" font-size="9">addr_i[3:0]</text>
+
+        <!-- INPUT label -->
+        <rect x="8" y="105" width="32" height="145" rx="2" fill="none" stroke="#1e2e1e"/>
+        <text x="24" y="185" text-anchor="middle" fill="#4a6060" font-size="8" transform="rotate(-90,24,185)" letter-spacing="2">INPUTS</text>
+
+        <!-- OUTPUT SIGNALS (right) -->
+        <!-- ready -->
+        <line x1="290" y1="175" x2="370" y2="175" stroke="#00ff88" stroke-width="1.5" marker-end="url(#arr)" filter="url(#glow-g)"/>
+        <text x="376" y="179" fill="#00ff88" font-size="9">ready_o</text>
+        <!-- rdata -->
+        <line x1="290" y1="205" x2="370" y2="205" stroke="#00e5ff" stroke-width="1.5" marker-end="url(#arr-c)" filter="url(#glow-c)"/>
+        <text x="376" y="209" fill="#00e5ff" font-size="9">rdata_o[3:0]</text>
+
+        <!-- OUTPUT label -->
+        <rect x="382" y="158" width="32" height="60" rx="2" fill="none" stroke="#1e2e1e"/>
+        <text x="398" y="193" text-anchor="middle" fill="#4a6060" font-size="8" transform="rotate(90,398,193)" letter-spacing="2">OUTPUTS</text>
+
+        <!-- CLOCK EDGE indicator -->
+        <polyline points="50,340 65,340 65,325 80,325 80,340 95,340 95,325 110,325 110,340" fill="none" stroke="#00e5ff" stroke-width="1.2"/>
+        <text x="50" y="358" fill="#00e5ff" font-size="8" letter-spacing="1">CLK (posedge triggered)</text>
+
+        <!-- Handshake annotation -->
+        <line x1="130" y1="340" x2="290" y2="340" stroke="#ffb800" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="210" y="355" text-anchor="middle" fill="#ffb800" font-size="8" letter-spacing="1">VALID-READY HANDSHAKE</text>
+        <line x1="130" y1="335" x2="130" y2="345" stroke="#ffb800" stroke-width="1"/>
+        <line x1="290" y1="335" x2="290" y2="345" stroke="#ffb800" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <!-- PARAMS + PORTS -->
+    <div class="arch-details">
+      <table class="param-table">
+        <thead><tr><th>PARAMETER</th><th>DEFAULT</th><th>DESCRIPTION</th></tr></thead>
+        <tbody>
+          <tr><td class="key">depth</td><td class="val">16</td><td>Number of memory locations</td></tr>
+          <tr><td class="key">width</td><td class="val">4</td><td>Data word size in bits</td></tr>
+          <tr><td class="key">addr_width</td><td class="val">$clog2(depth)</td><td>Auto-calculated address bus width</td></tr>
+        </tbody>
+      </table>
+
+      <div class="port-block">
+        <div class="port-block-head">// PORT LIST</div>
+        <table class="port-table">
+          <thead><tr><th>PORT</th><th>DIR</th><th>WIDTH</th><th>FUNCTION</th></tr></thead>
+          <tbody>
+            <tr><td class="in">clk_i</td><td class="in">IN</td><td>1</td><td>System clock</td></tr>
+            <tr><td class="sig">rst_i</td><td class="sig">IN</td><td>1</td><td>Sync active-high reset</td></tr>
+            <tr><td class="in">valid_i</td><td class="in">IN</td><td>1</td><td>Request valid flag</td></tr>
+            <tr><td class="in">wr_rd_i</td><td class="in">IN</td><td>1</td><td>1=Write, 0=Read</td></tr>
+            <tr><td class="in">wdata_i</td><td class="in">IN</td><td>width</td><td>Write data bus</td></tr>
+            <tr><td class="in">addr_i</td><td class="in">IN</td><td>addr_w</td><td>Memory address</td></tr>
+            <tr><td class="out">ready_o</td><td class="out">OUT</td><td>1</td><td>Module ready flag</td></tr>
+            <tr><td class="out">rdata_o</td><td class="out">OUT</td><td>width</td><td>Read data output</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORKING PRINCIPLE -->
+<section id="working">
+  <div class="sec-label">MODULE_02 &nbsp; OPERATION</div>
+  <h2 class="sec-title">WORKING <span>PRINCIPLE</span></h2>
+  <div class="phases-grid reveal">
+    <div class="phase-card reset-c">
+      <div class="phase-icon">⟳</div>
+      <div class="phase-title">RESET PHASE</div>
+      <ul class="phase-conds">
+        <li>Triggered when <code style="color:var(--cyan)">rst_i = 1</code></li>
+        <li>All memory locations cleared to 0</li>
+        <li><code style="color:var(--cyan)">ready_o</code> deasserted</li>
+        <li><code style="color:var(--cyan)">rdata_o</code> cleared</li>
+        <li>Synchronous — acts on posedge clk</li>
+      </ul>
+    </div>
+    <div class="phase-card write-c">
+      <div class="phase-icon">✎</div>
+      <div class="phase-title">WRITE OPERATION</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--green)">valid_i = 1</code></li>
+        <li><code style="color:var(--green)">wr_rd_i = 1</code></li>
+        <li><code style="color:var(--green)">wdata_i → mem[addr_i]</code></li>
+        <li><code style="color:var(--green)">ready_o</code> asserted</li>
+        <li>Latched on posedge clk</li>
+      </ul>
+    </div>
+    <div class="phase-card read-c">
+      <div class="phase-icon">◈</div>
+      <div class="phase-title">READ OPERATION</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--amber)">valid_i = 1</code></li>
+        <li><code style="color:var(--amber)">wr_rd_i = 0</code></li>
+        <li><code style="color:var(--amber)">mem[addr_i] → rdata_o</code></li>
+        <li><code style="color:var(--amber)">ready_o</code> asserted</li>
+        <li>Sequential read of all locs in TB</li>
+      </ul>
+    </div>
+    <div class="phase-card hsk-c">
+      <div class="phase-icon">⇄</div>
+      <div class="phase-title">HANDSHAKE LOGIC</div>
+      <ul class="phase-conds">
+        <li><code style="color:#c084fc">ready_o</code> = 1 when valid accepted</li>
+        <li><code style="color:#c084fc">ready_o</code> = 0 when valid = 0</li>
+        <li>TB waits on <code style="color:#c084fc">ready_o</code> before next txn</li>
+        <li>Prevents data loss on back-to-back ops</li>
+        <li>Controlled flow without stalls</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- WAVEFORM -->
+<section id="waveform">
+  <div class="sec-label">MODULE_03 &nbsp; SIMULATION</div>
+  <h2 class="sec-title">WAVEFORM <span>OUTPUT</span></h2>
+  <div class="reveal">
+    <div class="wave-note">
+      ⚡ Captured from ModelSim simulation. Sequence: RESET → WRITE (all 16 locations) → READ (sequential)
+    </div>
+    <div class="wave-img-wrap">
+      <div class="wave-label">ModelSim :: memory_tb.v</div>
+      <img
+        src="https://github.com/monish-sr/memory-verilog/raw/300b8c4b708787a5a3c35a820447f8bef6b39e83/Waveform%20-%20Memory.png"
+        alt="ModelSim Waveform - Memory Verilog"
+        loading="lazy"
+        style="width:100%;display:block;filter:brightness(1.05) saturate(1.1)"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      >
+      <div style="display:none;padding:40px;text-align:center;color:var(--muted);flex-direction:column;gap:10px;align-items:center">
+        <span style="font-size:24px">📊</span>
+        <span style="font-size:12px">Waveform image — view on GitHub</span>
+        <a href="https://github.com/monish-sr/memory-verilog/blob/main/Waveform%20-%20Memory.png" target="_blank" class="btn btn-cyan" style="margin-top:8px;font-size:11px">OPEN WAVEFORM</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTBENCH -->
+<section id="testbench">
+  <div class="sec-label">MODULE_04 &nbsp; VERIFICATION</div>
+  <h2 class="sec-title">TESTBENCH <span>TASKS</span></h2>
+  <div class="tb-grid reveal">
+    <div class="tb-task t1">
+      <div class="tb-task-head">
+        <div class="tb-task-icon">⟳</div>
+        <span class="tb-task-name">task reset()</span>
+      </div>
+      <ul>
+        <li>Initializes all signal to 0</li>
+        <li>Asserts <code style="color:var(--cyan)">rst_i = 1</code></li>
+        <li>Holds for 2 posedge clk cycles</li>
+        <li>Deasserts reset to begin DUT operation</li>
+      </ul>
+    </div>
+    <div class="tb-task t2">
+      <div class="tb-task-head">
+        <div class="tb-task-icon">✎</div>
+        <span class="tb-task-name">task write()</span>
+      </div>
+      <ul>
+        <li>Iterates all 16 addresses (0→15)</li>
+        <li>Drives <code style="color:var(--green)">$random()</code> data per location</li>
+        <li>Sets <code style="color:var(--green)">wr_rd_i=1, valid_i=1</code></li>
+        <li>Waits for <code style="color:var(--green)">ready_o</code> before next write</li>
+        <li>Clears all signals post-loop</li>
+      </ul>
+    </div>
+    <div class="tb-task t3">
+      <div class="tb-task-head">
+        <div class="tb-task-icon">◈</div>
+        <span class="tb-task-name">task read()</span>
+      </div>
+      <ul>
+        <li>Reads all 16 addresses sequentially</li>
+        <li>Sets <code style="color:var(--amber)">wr_rd_i=0, valid_i=1</code></li>
+        <li>Captures <code style="color:var(--amber)">rdata_o</code> per address</li>
+        <li>Clears all signals post-loop</li>
+        <li>Simulation ends at <code style="color:var(--amber)">#1000</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SOURCE CODE -->
+<section id="code">
+  <div class="sec-label">MODULE_05 &nbsp; SOURCE</div>
+  <h2 class="sec-title">SOURCE <span>CODE</span></h2>
+  <div class="reveal">
+    <div class="code-viewer">
+      <div class="code-titlebar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span style="margin-left:8px;">monish-sr / memory-verilog</span>
+      </div>
+      <div class="code-tabs">
+        <div class="ctab active" onclick="switchTab('design')">memory_design.v</div>
+        <div class="ctab" onclick="switchTab('tb')">memory_tb.v</div>
+      </div>
+      <div class="code-body">
+        <pre id="pane-design" class="cpane active"><span class="cmt">// Memory Design</span>
+
+<span class="kw">module</span> <span class="mod">memory</span> <span class="parm">#(</span><span class="kw">parameter</span> <span class="sig">depth</span> <span class="op">=</span> <span class="num">16</span>, <span class="sig">width</span> <span class="op">=</span> <span class="num">4</span>,
+              <span class="sig">addr_width</span> <span class="op">=</span> <span class="kw">$clog2</span>(<span class="sig">depth</span>)<span class="parm">)</span>
+  (<span class="sig">clk_i</span>, <span class="sig">rst_i</span>, <span class="sig">wr_rd_i</span>, <span class="sig">valid_i</span>,
+   <span class="sig">wdata_i</span>, <span class="sig">addr_i</span>, <span class="sig">ready_o</span>, <span class="sig">rdata_o</span>);
+
+<span class="cmt">// Signal declarations</span>
+<span class="kw">input</span>  <span class="sig">clk_i</span>, <span class="sig">rst_i</span>, <span class="sig">wr_rd_i</span>, <span class="sig">valid_i</span>;
+<span class="kw">input</span>  [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>]      <span class="sig">wdata_i</span>;
+<span class="kw">input</span>  [<span class="sig">addr_width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">addr_i</span>;
+<span class="kw">integer</span> i;
+
+<span class="kw">output reg</span>             <span class="sig">ready_o</span>;
+<span class="kw">output reg</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">rdata_o</span>;
+<span class="kw">reg</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] mem [<span class="sig">depth</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>];
+
+<span class="kw">always</span>@(<span class="kw">posedge</span> <span class="sig">clk_i</span>) <span class="kw">begin</span>
+  <span class="kw">if</span>(<span class="sig">rst_i</span>) <span class="kw">begin</span>
+    <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+    <span class="sig">rdata_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+    <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span><span class="sig">depth</span>; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) mem[i] <span class="op">&lt;=</span> <span class="num">0</span>;
+  <span class="kw">end</span>
+  <span class="kw">else begin</span>
+    <span class="kw">if</span>(<span class="sig">valid_i</span>) <span class="kw">begin</span>
+      <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">1</span>;
+      <span class="kw">if</span>(<span class="sig">wr_rd_i</span>) mem[<span class="sig">addr_i</span>] <span class="op">&lt;=</span> <span class="sig">wdata_i</span>;
+      <span class="kw">else</span>        <span class="sig">rdata_o</span>   <span class="op">&lt;=</span> mem[<span class="sig">addr_i</span>];
+    <span class="kw">end</span>
+    <span class="kw">else</span> <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+  <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="kw">endmodule</span></pre>
+
+        <pre id="pane-tb" class="cpane"><span class="str">`include "memory_design.v"</span>
+
+<span class="kw">module</span> <span class="mod">tb</span> <span class="parm">#(</span><span class="kw">parameter</span> <span class="sig">width</span><span class="op">=</span><span class="num">4</span>, <span class="sig">depth</span><span class="op">=</span><span class="num">16</span>,
+            <span class="sig">addr_width</span><span class="op">=</span><span class="kw">$clog2</span>(<span class="sig">depth</span>)<span class="parm">)</span>;
+
+<span class="kw">reg</span>  <span class="sig">clk_i</span>,<span class="sig">rst_i</span>,<span class="sig">valid_i</span>,<span class="sig">wr_rd_i</span>;
+<span class="kw">reg</span>  [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>]      <span class="sig">wdata_i</span>;
+<span class="kw">reg</span>  [<span class="sig">addr_width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">addr_i</span>;
+<span class="kw">integer</span> i;
+<span class="kw">wire</span>                   <span class="sig">ready_o</span>;
+<span class="kw">wire</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>]       <span class="sig">rdata_o</span>;
+
+<span class="cmt">// DUT Instantiation</span>
+<span class="mod">memory</span> <span class="parm">#(.width(width),.depth(depth),.addr_width(addr_width))</span>
+  dut (.<span class="sig">clk_i</span>(<span class="sig">clk_i</span>), .<span class="sig">rst_i</span>(<span class="sig">rst_i</span>),
+       .<span class="sig">valid_i</span>(<span class="sig">valid_i</span>), .<span class="sig">wr_rd_i</span>(<span class="sig">wr_rd_i</span>),
+       .<span class="sig">wdata_i</span>(<span class="sig">wdata_i</span>), .<span class="sig">addr_i</span>(<span class="sig">addr_i</span>),
+       .<span class="sig">ready_o</span>(<span class="sig">ready_o</span>), .<span class="sig">rdata_o</span>(<span class="sig">rdata_o</span>));
+
+<span class="kw">always</span> <span class="num">#5</span> <span class="sig">clk_i</span> <span class="op">=</span> <span class="op">~</span><span class="sig">clk_i</span>;   <span class="cmt">// 10ns period</span>
+
+<span class="cmt">// ── RESET TASK ──────────────────────────</span>
+<span class="kw">task</span> <span class="mod">reset</span>();
+<span class="kw">begin</span>
+  <span class="sig">rst_i</span><span class="op">=</span><span class="num">1</span>; <span class="sig">wr_rd_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">wdata_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">valid_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">addr_i</span><span class="op">=</span><span class="num">0</span>;
+  <span class="kw">repeat</span>(<span class="num">2</span>) @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
+  <span class="sig">rst_i</span><span class="op">=</span><span class="num">0</span>;
+<span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="cmt">// ── WRITE TASK ──────────────────────────</span>
+<span class="kw">task</span> <span class="mod">write</span>();
+<span class="kw">begin</span>
+  <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span><span class="sig">depth</span>; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) <span class="kw">begin</span>
+    @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
+    <span class="sig">wr_rd_i</span> <span class="op">=</span> <span class="num">1</span>; <span class="sig">wdata_i</span> <span class="op">=</span> <span class="kw">$random</span>();
+    <span class="sig">addr_i</span>  <span class="op">=</span> i; <span class="sig">valid_i</span> <span class="op">=</span> <span class="num">1</span>;
+    <span class="kw">wait</span>(<span class="sig">ready_o</span> <span class="op">==</span> <span class="num">1</span>);
+  <span class="kw">end</span>
+  @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
+  {<span class="sig">wr_rd_i</span>,<span class="sig">wdata_i</span>,<span class="sig">addr_i</span>,<span class="sig">valid_i</span>} <span class="op">=</span> <span class="num">0</span>;
+<span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="cmt">// ── READ TASK ───────────────────────────</span>
+<span class="kw">task</span> <span class="mod">read</span>();
+<span class="kw">begin</span>
+  <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span><span class="sig">depth</span>; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) <span class="kw">begin</span>
+    @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
+    <span class="sig">wr_rd_i</span> <span class="op">=</span> <span class="num">0</span>; <span class="sig">addr_i</span> <span class="op">=</span> i; <span class="sig">valid_i</span> <span class="op">=</span> <span class="num">1</span>;
+  <span class="kw">end</span>
+  @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
+  {<span class="sig">wr_rd_i</span>,<span class="sig">addr_i</span>,<span class="sig">valid_i</span>} <span class="op">=</span> <span class="num">0</span>;
+<span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="kw">initial begin</span>
+  <span class="sig">clk_i</span> <span class="op">=</span> <span class="num">0</span>;
+  <span class="mod">reset</span>();   <span class="cmt">// PHASE 1</span>
+  <span class="mod">write</span>();   <span class="cmt">// PHASE 2</span>
+  <span class="mod">read</span>();    <span class="cmt">// PHASE 3</span>
+<span class="kw">end</span>
+
+<span class="kw">initial</span> <span class="num">#1000</span> <span class="kw">$finish</span>();
+
+<span class="kw">endmodule</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FILES -->
+<section id="files">
+  <div class="sec-label">MODULE_06 &nbsp; REPOSITORY</div>
+  <h2 class="sec-title">FILE <span>TREE</span></h2>
+  <div class="file-list reveal">
+    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/memory_design.v" target="_blank">
+      <span class="file-icon">📄</span>
+      <span class="file-name">memory_design.v</span>
+      <span class="file-meta"><span class="file-size">828 B</span> &nbsp;·&nbsp; 37 lines &nbsp;·&nbsp; Main design module</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/memory_tb.v" target="_blank">
+      <span class="file-icon">🧪</span>
+      <span class="file-name">memory_tb.v</span>
+      <span class="file-meta"><span class="file-size">1.36 KB</span> &nbsp;·&nbsp; 82 lines &nbsp;·&nbsp; Testbench (3 tasks)</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/Waveform%20-%20Memory.png" target="_blank">
+      <span class="file-icon">📊</span>
+      <span class="file-name">Waveform - Memory.png</span>
+      <span class="file-meta">ModelSim waveform output</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/README.md" target="_blank">
+      <span class="file-icon">📋</span>
+      <span class="file-name">README.md</span>
+      <span class="file-meta">Project documentation</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/LICENSE" target="_blank">
+      <span class="file-icon">⚖</span>
+      <span class="file-name">LICENSE</span>
+      <span class="file-meta">MIT License</span>
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <a href="https://github.com/monish-sr/memory-verilog" target="_blank">github.com/monish-sr/memory-verilog</a>
+  </div>
+  <div>Built by <span>Monish S R</span> &nbsp;|&nbsp; Verilog HDL &nbsp;|&nbsp; MIT License</div>
+  <div><a href="https://github.com/monish-sr" target="_blank">← monish-sr</a></div>
+</footer>
+
+<script>
+/* CLOCK */
+function tick(){
+  const n=new Date(),p=v=>String(v).padStart(2,'0');
+  document.getElementById('live-clock').textContent=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
+}
+setInterval(tick,1000);tick();
+
+/* CODE TABS */
+function switchTab(id){
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.cpane').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${id}')"]`).classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+}
+
+/* SCROLL REVEAL */
+const ro=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');ro.unobserve(e.target);}});
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+</script>
+</body>
+</html>
