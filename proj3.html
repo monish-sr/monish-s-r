@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>memory-system-verilog :: monish-sr</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #080b0f;
+  --bg1:     #0d1117;
+  --bg2:     #111820;
+  --bg3:     #0a1020;
+  --green:   #00ff88;
+  --green-d: #00cc6a;
+  --cyan:    #00e5ff;
+  --cyan-d:  #00b8cc;
+  --amber:   #ffb800;
+  --red:     #ff4455;
+  --purple:  #c084fc;
+  --dim:     #1e2e1e;
+  --muted:   #4a6060;
+  --text:    #c8d8c8;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-ui: 'Oxanium', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:14px;line-height:1.6;overflow-x:hidden;cursor:crosshair}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,.012) 2px,rgba(0,255,136,.012) 4px);pointer-events:none;z-index:9999}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--green)}
+
+/* NAVBAR */
+#navbar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(8,11,15,.94);border-bottom:1px solid var(--green);
+  backdrop-filter:blur(10px);display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;height:44px;
+  font-size:12px;box-shadow:0 0 24px rgba(0,255,136,.15);
+}
+.nav-brand{color:var(--green);font-family:var(--font-ui);font-weight:700;letter-spacing:2px;text-decoration:none}
+.nav-brand span{color:var(--amber)}
+.nav-crumb{color:var(--muted);display:flex;align-items:center;gap:8px;font-size:11px}
+.nav-crumb a{color:var(--cyan);text-decoration:none}
+.nav-crumb a:hover{color:var(--green)}
+.nav-right{display:flex;gap:16px;align-items:center;font-size:11px;color:var(--muted)}
+#live-clock{color:var(--cyan);font-family:var(--font-mono);letter-spacing:1px}
+.nav-badge{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--green);padding:2px 8px;border-radius:2px;font-size:10px;letter-spacing:1px}
+
+/* HERO */
+#hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:80px 8vw 40px;position:relative;overflow:hidden;
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  mask-image:radial-gradient(ellipse 90% 80% at 30% 50%,black,transparent);
+}
+.scanbeam{position:absolute;top:0;left:-100%;width:50%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanbeam 7s linear infinite;opacity:.35}
+@keyframes scanbeam{to{left:200%}}
+.scanbeam2{top:33%;animation-delay:3.5s;background:linear-gradient(90deg,transparent,var(--green),transparent)}
+
+.hero-content{position:relative;z-index:1;max-width:920px;width:100%}
+.hero-eyebrow{font-size:11px;color:var(--green);letter-spacing:4px;text-transform:uppercase;margin-bottom:14px;opacity:0;animation:fadeUp .5s .3s forwards}
+.hero-eyebrow span{color:var(--muted)}
+.hero-title{
+  font-family:var(--font-display);
+  font-size:clamp(38px,7.2vw,96px);
+  line-height:.88;color:var(--green);
+  text-shadow:0 0 50px rgba(0,255,136,.4);
+  opacity:0;animation:fadeUp .5s .5s forwards;
+}
+.hero-title .sub{color:var(--cyan);text-shadow:0 0 50px rgba(0,229,255,.4)}
+.hero-tagline{
+  font-family:var(--font-ui);font-size:clamp(13px,1.5vw,16px);
+  color:var(--text);letter-spacing:2px;margin:18px 0 28px;
+  opacity:0;animation:fadeUp .5s .7s forwards;
+  border-left:2px solid var(--amber);padding-left:14px;
+  max-width:680px;line-height:1.8;
+}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px;opacity:0;animation:fadeUp .5s .9s forwards}
+.mpill{font-size:10px;letter-spacing:1.5px;padding:4px 12px;border:1px solid;border-radius:2px;font-family:var(--font-ui);display:flex;align-items:center;gap:6px}
+.mpill.g{color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.06)}
+.mpill.c{color:var(--cyan);border-color:rgba(0,229,255,.3);background:rgba(0,229,255,.06)}
+.mpill.a{color:var(--amber);border-color:rgba(255,184,0,.3);background:rgba(255,184,0,.06)}
+.mpill.r{color:var(--red);border-color:rgba(255,68,85,.3);background:rgba(255,68,85,.06)}
+.mpill.p{color:var(--purple);border-color:rgba(192,132,252,.3);background:rgba(192,132,252,.06)}
+
+.stat-strip{
+  display:flex;gap:0;flex-wrap:wrap;
+  border:1px solid var(--dim);background:var(--bg1);
+  margin-bottom:36px;opacity:0;animation:fadeUp .5s 1.1s forwards;
+}
+.stat-cell{flex:1;min-width:96px;padding:14px 18px;border-right:1px solid var(--dim);display:flex;flex-direction:column;gap:4px;transition:background .2s}
+.stat-cell:last-child{border-right:none}
+.stat-cell:hover{background:rgba(0,255,136,.04)}
+.stat-num{font-family:var(--font-display);font-size:26px;color:var(--green);letter-spacing:1px}
+.stat-lbl{font-size:9.5px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;opacity:0;animation:fadeUp .5s 1.2s forwards}
+.btn{font-family:var(--font-mono);font-size:12px;letter-spacing:2px;padding:10px 22px;border:1px solid;text-decoration:none;cursor:pointer;transition:all .2s;background:transparent;display:inline-flex;align-items:center;gap:8px;text-transform:uppercase}
+.btn-green{color:var(--green);border-color:var(--green)}
+.btn-green:hover{background:var(--green);color:var(--bg);box-shadow:0 0 20px var(--green)}
+.btn-cyan{color:var(--cyan);border-color:var(--cyan)}
+.btn-cyan:hover{background:var(--cyan);color:var(--bg);box-shadow:0 0 20px var(--cyan)}
+.btn-amber{color:var(--amber);border-color:var(--amber)}
+.btn-amber:hover{background:var(--amber);color:var(--bg);box-shadow:0 0 20px var(--amber)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* SECTIONS */
+section{padding:72px 8vw;position:relative}
+.sec-label{font-size:10px;color:var(--green);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.sec-label::before{content:'//';color:var(--amber)}
+.sec-label::after{content:'';flex:1;max-width:60px;height:1px;background:var(--green)}
+.sec-title{font-family:var(--font-display);font-size:clamp(30px,4.2vw,52px);color:#fff;letter-spacing:2px;line-height:1;margin-bottom:40px}
+.sec-title span{color:var(--green)}
+.sec-sub{font-size:12px;color:var(--muted);margin:-28px 0 32px;max-width:640px;line-height:1.8}
+
+/* ARCHITECTURE */
+#overview{background:var(--bg1)}
+.arch-wrap{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+@media(max-width:760px){.arch-wrap{grid-template-columns:1fr}}
+.arch-diagram{background:var(--bg3);border:1px solid var(--dim);padding:28px;position:relative;overflow:hidden}
+.arch-diagram::before{content:'// BLOCK_DIAGRAM';position:absolute;top:0;right:0;font-size:9px;color:var(--muted);letter-spacing:2px;padding:6px 10px;background:var(--bg2)}
+.diag-svg{width:100%;max-width:460px;display:block;margin:0 auto}
+.arch-details{display:flex;flex-direction:column;gap:16px}
+.param-table{width:100%;border-collapse:collapse;font-size:12px}
+.param-table th{text-align:left;color:var(--amber);font-weight:600;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--dim);font-family:var(--font-ui);letter-spacing:1px;font-size:10px}
+.param-table td{padding:8px 12px;border-bottom:1px solid rgba(42,58,42,.3);color:var(--text);vertical-align:top}
+.param-table tr:hover td{background:rgba(0,255,136,.03)}
+.param-table .key{color:var(--cyan);font-weight:600}
+.param-table .val{color:var(--green)}
+.port-block{background:var(--bg2);border:1px solid var(--dim);overflow:hidden}
+.port-block-head{background:var(--bg3);border-bottom:1px solid var(--dim);padding:8px 14px;font-size:10px;color:var(--amber);letter-spacing:2px;font-family:var(--font-ui)}
+.port-table{width:100%;border-collapse:collapse;font-size:11px}
+.port-table th{text-align:left;color:var(--muted);padding:7px 12px;background:var(--bg3);font-weight:400;letter-spacing:1px}
+.port-table td{padding:6px 12px;border-bottom:1px solid rgba(42,58,42,.25);color:var(--text)}
+.port-table .in{color:var(--cyan)}
+.port-table .out{color:var(--green)}
+.port-table .sig{color:var(--amber)}
+
+/* TB ARCHITECTURE */
+#tbarch{background:var(--bg)}
+.tbarch-wrap{background:var(--bg3);border:1px solid var(--dim);padding:28px;position:relative;overflow:hidden}
+.tbarch-wrap::before{content:'// ENV_TOPOLOGY';position:absolute;top:0;right:0;font-size:9px;color:var(--muted);letter-spacing:2px;padding:6px 10px;background:var(--bg2)}
+
+/* WORKING PRINCIPLE */
+#working{background:var(--bg1)}
+.phases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.phase-card{background:var(--bg2);border:1px solid var(--dim);padding:20px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s;cursor:default}
+.phase-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;transform:scaleX(0);transition:transform .3s}
+.phase-card.gen-c::before{background:var(--cyan)}
+.phase-card.drv-c::before{background:var(--green)}
+.phase-card.mon-c::before{background:var(--amber)}
+.phase-card.chk-c::before{background:var(--red)}
+.phase-card.cov-c::before{background:var(--purple)}
+.phase-card:hover{transform:translateY(-4px)}
+.phase-card.gen-c:hover{border-color:var(--cyan)}
+.phase-card.drv-c:hover{border-color:var(--green)}
+.phase-card.mon-c:hover{border-color:var(--amber)}
+.phase-card.chk-c:hover{border-color:var(--red)}
+.phase-card.cov-c:hover{border-color:var(--purple)}
+.phase-card:hover::before{transform:scaleX(1)}
+.phase-icon{font-size:20px;margin-bottom:10px}
+.phase-title{font-family:var(--font-ui);font-size:12px;font-weight:700;margin-bottom:10px}
+.phase-card.gen-c .phase-title{color:var(--cyan)}
+.phase-card.drv-c .phase-title{color:var(--green)}
+.phase-card.mon-c .phase-title{color:var(--amber)}
+.phase-card.chk-c .phase-title{color:var(--red)}
+.phase-card.cov-c .phase-title{color:var(--purple)}
+.phase-conds{list-style:none;font-size:11px;color:var(--text)}
+.phase-conds li{padding:3px 0;display:flex;gap:6px;align-items:flex-start}
+.phase-conds li::before{content:'▸';flex-shrink:0;margin-top:1px}
+.phase-card.gen-c .phase-conds li::before{color:var(--cyan)}
+.phase-card.drv-c .phase-conds li::before{color:var(--green)}
+.phase-card.mon-c .phase-conds li::before{color:var(--amber)}
+.phase-card.chk-c .phase-conds li::before{color:var(--red)}
+.phase-card.cov-c .phase-conds li::before{color:var(--purple)}
+
+/* TESTCASES */
+#testcases{background:var(--bg)}
+.tc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:32px}
+.tc-card{background:var(--bg1);border:1px solid var(--dim);padding:18px;position:relative;transition:border-color .3s,transform .3s}
+.tc-card:hover{transform:translateY(-4px)}
+.tc-card.tc-1w:hover{border-color:var(--cyan)}
+.tc-card.tc-nw:hover{border-color:var(--green)}
+.tc-card.tc-1wr:hover{border-color:var(--amber)}
+.tc-card.tc-nwr:hover{border-color:var(--purple)}
+.tc-tag{display:inline-block;font-size:9px;letter-spacing:2px;padding:2px 8px;border:1px solid;border-radius:2px;font-family:var(--font-ui);margin-bottom:10px}
+.tc-card.tc-1w .tc-tag{color:var(--cyan);border-color:rgba(0,229,255,.4);background:rgba(0,229,255,.06)}
+.tc-card.tc-nw .tc-tag{color:var(--green);border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.06)}
+.tc-card.tc-1wr .tc-tag{color:var(--amber);border-color:rgba(255,184,0,.4);background:rgba(255,184,0,.06)}
+.tc-card.tc-nwr .tc-tag{color:var(--purple);border-color:rgba(192,132,252,.4);background:rgba(192,132,252,.06)}
+.tc-name{font-family:var(--font-ui);font-size:14px;font-weight:700;margin-bottom:8px;color:#fff}
+.tc-desc{font-size:11px;color:var(--text);line-height:1.6;margin-bottom:10px}
+.tc-seq{font-size:10px;color:var(--muted)}
+.tc-seq span{color:var(--amber)}
+.tc-note{font-size:12px;color:var(--muted);padding:10px 16px;border-left:2px solid var(--cyan);background:rgba(0,229,255,.04)}
+.tc-note code{color:var(--amber)}
+
+/* ASSERTIONS */
+#assertions{background:var(--bg1)}
+.assert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.assert-card{background:var(--bg2);border:1px solid var(--dim);padding:16px 18px;transition:border-color .2s}
+.assert-card:hover{border-color:var(--red)}
+.assert-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.assert-name{font-family:var(--font-ui);font-size:12px;font-weight:700;color:var(--red)}
+.assert-id{font-size:9px;color:var(--muted);letter-spacing:1px}
+.assert-body{font-size:11px;color:var(--text);line-height:1.7}
+.assert-body code{color:var(--cyan)}
+
+/* COVERAGE */
+#coverage{background:var(--bg)}
+.cov-wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;align-items:start}
+@media(max-width:820px){.cov-wrap{grid-template-columns:1fr}}
+.cov-img-wrap{background:var(--bg3);border:1px solid var(--dim);padding:0;overflow:hidden;position:relative}
+.cov-img-wrap img{width:100%;display:block;filter:brightness(1.05) saturate(1.1)}
+.cov-label{position:absolute;top:8px;left:8px;font-size:9px;color:var(--purple);letter-spacing:2px;background:rgba(8,11,15,.8);padding:3px 8px;border:1px solid var(--dim)}
+.cov-detail{display:flex;flex-direction:column;gap:14px}
+.cov-block{background:var(--bg1);border:1px solid var(--dim);padding:16px 18px}
+.cov-block-head{font-size:10px;color:var(--purple);letter-spacing:2px;font-family:var(--font-ui);margin-bottom:10px}
+.cov-bins{display:flex;flex-wrap:wrap;gap:8px}
+.cov-bin{font-size:10px;padding:4px 10px;border:1px solid rgba(192,132,252,.35);color:var(--purple);background:rgba(192,132,252,.06);border-radius:2px;font-family:var(--font-ui)}
+
+/* WAVEFORM */
+#waveform{background:var(--bg1)}
+.wave-note{font-size:12px;color:var(--muted);margin-bottom:20px;padding:10px 16px;border-left:2px solid var(--amber);background:rgba(255,184,0,.04)}
+.wave-img-wrap{background:var(--bg3);border:1px solid var(--dim);padding:0;overflow:hidden;position:relative}
+.wave-img-wrap img{width:100%;display:block;filter:brightness(1.05) saturate(1.1)}
+.wave-label{position:absolute;top:8px;left:8px;font-size:9px;color:var(--green);letter-spacing:2px;background:rgba(8,11,15,.8);padding:3px 8px;border:1px solid var(--dim)}
+
+/* SIM SCRIPT */
+#simscript{background:var(--bg)}
+.run-do-box{background:var(--bg1);border:1px solid var(--dim);overflow:hidden}
+.run-do-head{background:var(--bg3);border-bottom:1px solid var(--dim);padding:8px 16px;font-size:10px;color:var(--amber);letter-spacing:2px;font-family:var(--font-ui);display:flex;align-items:center;gap:8px}
+.run-do-body{padding:16px 20px;font-size:12px;line-height:1.9}
+.pf-box{margin-top:20px;background:var(--bg1);border:1px solid var(--dim);padding:16px 20px}
+.pf-box .pf-head{font-size:10px;color:var(--green);letter-spacing:2px;font-family:var(--font-ui);margin-bottom:8px}
+.pf-box pre{font-size:11.5px;color:var(--text);line-height:1.8;white-space:pre-wrap}
+
+/* CODE VIEWER */
+.code-viewer{background:var(--bg);border:1px solid var(--dim);overflow:hidden}
+.code-titlebar{background:var(--bg3);border-bottom:1px solid var(--dim);padding:8px 16px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
+.code-tabs{display:flex;border-bottom:1px solid var(--dim);overflow-x:auto}
+.ctab{padding:8px 16px;font-size:10.5px;cursor:pointer;border-right:1px solid var(--dim);color:var(--muted);font-family:var(--font-mono);transition:color .2s,background .2s;letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
+.ctab:hover{color:var(--text);background:rgba(0,255,136,.03)}
+.ctab.active{color:var(--green);background:rgba(0,255,136,.06);border-bottom:2px solid var(--green)}
+.code-body{padding:20px;overflow-x:auto;font-size:12px;line-height:1.75;max-height:460px;overflow-y:auto}
+.code-body::-webkit-scrollbar{width:4px;height:4px}
+.code-body::-webkit-scrollbar-thumb{background:var(--green)}
+.cpane{display:none}.cpane.active{display:block}
+.kw{color:var(--purple)}.mod{color:var(--cyan)}.sig{color:var(--green)}
+.num{color:var(--amber)}.cmt{color:var(--muted);font-style:italic}
+.parm{color:#f97316}.op{color:var(--amber)}.str{color:var(--amber)}
+
+/* FILE LIST */
+#files{background:var(--bg1)}
+.file-list{display:flex;flex-direction:column;gap:8px;max-width:680px}
+.file-row{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--dim);padding:12px 16px;transition:border-color .2s,background .2s;text-decoration:none}
+.file-row:hover{border-color:var(--green);background:rgba(0,255,136,.03)}
+.file-icon{font-size:16px;flex-shrink:0}
+.file-name{color:var(--cyan);font-size:13px;flex:1}
+.file-meta{font-size:10px;color:var(--muted);text-align:right}
+.file-size{color:var(--amber)}
+
+/* FOOTER */
+footer{background:var(--bg3);border-top:1px solid var(--dim);padding:20px 8vw;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted)}
+footer span{color:var(--green)}
+footer a{color:var(--cyan);text-decoration:none}
+footer a:hover{color:var(--green)}
+
+/* SCROLL REVEAL */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+.reveal.visible{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a href="#" class="nav-brand">MONISH<span>_SR</span></a>
+  <div class="nav-crumb">
+    <a href="index.html">monish-sr</a>
+    <span style="color:var(--dim)">/</span>
+    <span style="color:var(--green)">memory-system-verilog</span>
+    <span style="color:var(--dim)">:: main</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-badge">SystemVerilog 77.3%</span>
+    <span id="live-clock">00:00:00</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="scanbeam"></div>
+  <div class="scanbeam scanbeam2"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">// monish-sr / <span>memory-system-verilog</span> &nbsp;·&nbsp; SystemVerilog &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; 3 Commits</div>
+    <h1 class="hero-title">
+      MEMORY VERIFICATION<br>
+      <span class="sub">TESTBENCH IN SV</span>
+    </h1>
+    <div class="hero-tagline">
+      Class-based, mailbox-driven SystemVerilog testbench for a synchronous R/W memory DUT.<br>
+      Constrained-random generation, clocking-block BFM/monitor, shadow-memory scoreboard, functional coverage &amp; SVA protocol checks — driven entirely through ModelSim's <code style="color:var(--amber)">vopt +cover=fcbest</code> flow.
+    </div>
+    <div class="meta-row">
+      <span class="mpill g">⬡ depth = 16 (configurable)</span>
+      <span class="mpill c">⬡ width = 4 (configurable)</span>
+      <span class="mpill a">⬡ addr_width = $clog2(depth)</span>
+      <span class="mpill p">⬡ Mailbox-Based TLM</span>
+      <span class="mpill r">⬡ 6 SVA Protocol Checks</span>
+      <span class="mpill g">⬡ Functional Coverage (fcbest)</span>
+    </div>
+    <div class="stat-strip">
+      <div class="stat-cell"><span class="stat-num">13</span><span class="stat-lbl">Source Files</span></div>
+      <div class="stat-cell"><span class="stat-num">433</span><span class="stat-lbl">Total Lines</span></div>
+      <div class="stat-cell"><span class="stat-num">8</span><span class="stat-lbl">TB Components</span></div>
+      <div class="stat-cell"><span class="stat-num">4</span><span class="stat-lbl">Testcases</span></div>
+      <div class="stat-cell"><span class="stat-num">6</span><span class="stat-lbl">SVA Properties</span></div>
+      <div class="stat-cell"><span class="stat-num">3</span><span class="stat-lbl">Mailboxes</span></div>
+    </div>
+    <div class="hero-btns">
+      <a href="https://github.com/monish-sr/memory-system-verilog" target="_blank" class="btn btn-green">⬡ VIEW ON GITHUB</a>
+      <a href="#code" class="btn btn-cyan">⟨/⟩ SOURCE CODE</a>
+      <a href="#waveform" class="btn btn-amber">~ WAVEFORM</a>
+    </div>
+  </div>
+</section>
+
+<!-- DUT OVERVIEW -->
+<section id="overview">
+  <div class="sec-label">MODULE_01 &nbsp; DUT ARCHITECTURE</div>
+  <h2 class="sec-title">DESIGN <span>UNDER TEST</span></h2>
+  <div class="arch-wrap reveal">
+
+    <!-- BLOCK DIAGRAM -->
+    <div class="arch-diagram">
+      <svg class="diag-svg" viewBox="0 0 440 400" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+        <defs>
+          <filter id="glow-g"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00ff88"/></marker>
+          <marker id="arr-c" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00e5ff"/></marker>
+          <marker id="arr-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ff4455"/></marker>
+          <marker id="arr-a" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ffb800"/></marker>
+        </defs>
+        <rect width="440" height="400" fill="#0a1020"/>
+
+        <rect x="140" y="80" width="160" height="200" rx="2" fill="#0d1117" stroke="#00ff88" stroke-width="1.5" filter="url(#glow-g)"/>
+        <rect x="140" y="80" width="160" height="24" fill="#00ff88" fill-opacity=".1"/>
+        <text x="220" y="97" text-anchor="middle" fill="#00ff88" font-size="10" letter-spacing="2" font-weight="600">MEMORY_DUT</text>
+        <text x="220" y="116" text-anchor="middle" fill="#4a6060" font-size="9">#(depth=16, width=4)</text>
+
+        <rect x="158" y="126" width="124" height="118" rx="1" fill="#111820" stroke="#1e2e1e"/>
+        <text x="220" y="142" text-anchor="middle" fill="#4a6060" font-size="9" letter-spacing="1">reg [3:0] mem [15:0]</text>
+        <rect x="166" y="150" width="108" height="9" rx="1" fill="#1e2e1e"/>
+        <rect x="166" y="163" width="108" height="9" rx="1" fill="#1e2e1e"/>
+        <rect x="166" y="176" width="108" height="9" rx="1" fill="#1e2e1e"/>
+        <rect x="166" y="189" width="108" height="9" rx="1" fill="#1e2e1e"/>
+        <rect x="166" y="202" width="108" height="9" rx="1" fill="#1e2e1e"/>
+        <text x="172" y="157" fill="#00ff88" font-size="7">addr_i → [0]: xxxx</text>
+        <text x="172" y="170" fill="#4a6060" font-size="7">          [1]: xxxx</text>
+        <text x="172" y="183" fill="#4a6060" font-size="7">          [.]: ....</text>
+        <text x="172" y="196" fill="#4a6060" font-size="7">          [.]: ....</text>
+        <text x="172" y="209" fill="#00e5ff" font-size="7">          [15]: xxxx</text>
+
+        <text x="220" y="222" text-anchor="middle" fill="#4a6060" font-size="8">valid_i / ready_o handshake</text>
+        <text x="220" y="235" text-anchor="middle" fill="#4a6060" font-size="8">always @(posedge clk or posedge rst)</text>
+
+        <!-- INPUT SIGNALS -->
+        <line x1="48" y1="100" x2="140" y2="100" stroke="#00e5ff" stroke-width="1" marker-end="url(#arr-c)" stroke-dasharray="4 3"/>
+        <text x="42" y="104" text-anchor="end" fill="#00e5ff" font-size="9">clk_i</text>
+
+        <line x1="48" y1="123" x2="140" y2="123" stroke="#ff4455" stroke-width="1" marker-end="url(#arr-r)"/>
+        <text x="42" y="127" text-anchor="end" fill="#ff4455" font-size="9">rst_i</text>
+
+        <line x1="48" y1="146" x2="140" y2="146" stroke="#ffb800" stroke-width="1" marker-end="url(#arr-a)"/>
+        <text x="42" y="150" text-anchor="end" fill="#ffb800" font-size="9">valid_i</text>
+
+        <line x1="48" y1="169" x2="140" y2="169" stroke="#00ff88" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="42" y="173" text-anchor="end" fill="#00ff88" font-size="9">wr_rd_i</text>
+
+        <line x1="48" y1="192" x2="140" y2="192" stroke="#00ff88" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="42" y="196" text-anchor="end" fill="#00ff88" font-size="9">addr_i[3:0]</text>
+
+        <line x1="48" y1="215" x2="140" y2="215" stroke="#00ff88" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="42" y="219" text-anchor="end" fill="#00ff88" font-size="9">wdata_i[3:0]</text>
+
+        <rect x="6" y="90" width="30" height="140" rx="2" fill="none" stroke="#1e2e1e"/>
+        <text x="21" y="163" text-anchor="middle" fill="#4a6060" font-size="8" transform="rotate(-90,21,163)" letter-spacing="2">INPUTS</text>
+
+        <!-- OUTPUT SIGNALS -->
+        <line x1="300" y1="146" x2="390" y2="146" stroke="#00ff88" stroke-width="1.5" marker-end="url(#arr)" filter="url(#glow-g)"/>
+        <text x="396" y="150" fill="#00ff88" font-size="9">rdata_o[3:0]</text>
+
+        <line x1="300" y1="192" x2="390" y2="192" stroke="#ffb800" stroke-width="1.5" marker-end="url(#arr-a)"/>
+        <text x="396" y="196" fill="#ffb800" font-size="9">ready_o</text>
+
+        <rect x="404" y="136" width="30" height="66" rx="2" fill="none" stroke="#1e2e1e"/>
+        <text x="419" y="172" text-anchor="middle" fill="#4a6060" font-size="8" transform="rotate(90,419,172)" letter-spacing="2">OUT</text>
+
+        <!-- posedge clock annotation -->
+        <polyline points="48,330 63,330 63,314 78,314 78,330 93,330 93,314 108,314 108,330" fill="none" stroke="#00e5ff" stroke-width="1.2"/>
+        <text x="48" y="348" fill="#00e5ff" font-size="8" letter-spacing="1">CLK (posedge triggered)</text>
+
+        <line x1="140" y1="366" x2="300" y2="366" stroke="#ffb800" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="220" y="382" text-anchor="middle" fill="#ffb800" font-size="8" letter-spacing="1">VALID/READY PROTOCOL</text>
+        <line x1="140" y1="361" x2="140" y2="371" stroke="#ffb800" stroke-width="1"/>
+        <line x1="300" y1="361" x2="300" y2="371" stroke="#ffb800" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <!-- PARAMS + PORTS -->
+    <div class="arch-details">
+      <table class="param-table">
+        <thead><tr><th>PARAMETER</th><th>DEFAULT</th><th>DESCRIPTION</th></tr></thead>
+        <tbody>
+          <tr><td class="key">depth</td><td class="val">16</td><td>Number of addressable memory words</td></tr>
+          <tr><td class="key">width</td><td class="val">4</td><td>Data word size in bits</td></tr>
+          <tr><td class="key">addr_width</td><td class="val">$clog2(depth)</td><td>Auto-calculated address width</td></tr>
+        </tbody>
+      </table>
+
+      <div class="port-block">
+        <div class="port-block-head">// PORT LIST</div>
+        <table class="port-table">
+          <thead><tr><th>PORT</th><th>DIR</th><th>WIDTH</th><th>FUNCTION</th></tr></thead>
+          <tbody>
+            <tr><td class="in">clk_i</td><td class="in">IN</td><td>1</td><td>System clock</td></tr>
+            <tr><td class="sig">rst_i</td><td class="sig">IN</td><td>1</td><td>Async active-high reset</td></tr>
+            <tr><td class="in">valid_i</td><td class="in">IN</td><td>1</td><td>Transaction valid strobe</td></tr>
+            <tr><td class="in">wr_rd_i</td><td class="in">IN</td><td>1</td><td>1 = write, 0 = read</td></tr>
+            <tr><td class="in">addr_i</td><td class="in">IN</td><td>addr_width</td><td>Memory address</td></tr>
+            <tr><td class="in">wdata_i</td><td class="in">IN</td><td>width</td><td>Write data bus</td></tr>
+            <tr><td class="out">rdata_o</td><td class="out">OUT</td><td>width</td><td>Read data output</td></tr>
+            <tr><td class="sig">ready_o</td><td class="sig">OUT</td><td>1</td><td>Handshake response, 1 cycle after valid</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTBENCH ARCHITECTURE -->
+<section id="tbarch">
+  <div class="sec-label">MODULE_02 &nbsp; TB TOPOLOGY</div>
+  <h2 class="sec-title">TESTBENCH <span>ARCHITECTURE</span></h2>
+  <p class="sec-sub">Class-based environment communicating purely through <code style="color:var(--amber)">mailbox</code> handles — no ports, no interfaces between components. <code style="color:var(--cyan)">mem_env</code> forks the agent and scoreboard; <code style="color:var(--cyan)">mem_agnt</code> forks the generator, BFM, monitor and coverage collector.</p>
+  <div class="tbarch-wrap reveal">
+    <svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" style="width:100%;display:block">
+      <defs>
+        <marker id="a1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00e5ff"/></marker>
+        <marker id="a2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00ff88"/></marker>
+        <marker id="a3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ffb800"/></marker>
+        <marker id="a4" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#c084fc"/></marker>
+      </defs>
+      <rect width="900" height="380" fill="#0a1020"/>
+
+      <!-- env boundary -->
+      <rect x="20" y="20" width="860" height="340" rx="2" fill="none" stroke="#1e2e1e" stroke-dasharray="4 3"/>
+      <text x="34" y="38" fill="#4a6060" font-size="10" letter-spacing="2">mem_env</text>
+
+      <!-- agnt boundary -->
+      <rect x="44" y="54" width="520" height="270" rx="2" fill="#0d1117" stroke="#1e2e1e" stroke-dasharray="3 3"/>
+      <text x="58" y="72" fill="#4a6060" font-size="9" letter-spacing="2">mem_agnt</text>
+
+      <!-- mem_gen -->
+      <rect x="70" y="150" width="110" height="54" rx="2" fill="#0d1117" stroke="#00e5ff"/>
+      <text x="125" y="172" text-anchor="middle" fill="#00e5ff" font-size="10" font-weight="600">mem_gen</text>
+      <text x="125" y="187" text-anchor="middle" fill="#4a6060" font-size="8">randomize(tx)</text>
+
+      <!-- gen2bfm mailbox -->
+      <rect x="220" y="158" width="80" height="38" rx="2" fill="#111820" stroke="#4a6060"/>
+      <text x="260" y="174" text-anchor="middle" fill="#c8d8c8" font-size="8">gen2bfm</text>
+      <text x="260" y="186" text-anchor="middle" fill="#4a6060" font-size="7">mailbox</text>
+      <line x1="180" y1="177" x2="220" y2="177" stroke="#00e5ff" stroke-width="1.3" marker-end="url(#a1)"/>
+
+      <!-- mem_bfm -->
+      <rect x="340" y="150" width="110" height="54" rx="2" fill="#0d1117" stroke="#00ff88"/>
+      <text x="395" y="172" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">mem_bfm</text>
+      <text x="395" y="187" text-anchor="middle" fill="#4a6060" font-size="8">drive via bfm_cb</text>
+      <line x1="300" y1="177" x2="340" y2="177" stroke="#00ff88" stroke-width="1.3" marker-end="url(#a2)"/>
+
+      <!-- DUT via vif -->
+      <rect x="500" y="150" width="150" height="54" rx="2" fill="#0d1117" stroke="#ff4455"/>
+      <text x="575" y="172" text-anchor="middle" fill="#ff4455" font-size="10" font-weight="600">memory_dut</text>
+      <text x="575" y="187" text-anchor="middle" fill="#4a6060" font-size="8">via virtual mem_intf</text>
+      <line x1="450" y1="177" x2="500" y2="177" stroke="#00ff88" stroke-width="1.3" marker-end="url(#a2)"/>
+
+      <!-- mem_mon -->
+      <rect x="340" y="240" width="110" height="54" rx="2" fill="#0d1117" stroke="#ffb800"/>
+      <text x="395" y="262" text-anchor="middle" fill="#ffb800" font-size="10" font-weight="600">mem_mon</text>
+      <text x="395" y="277" text-anchor="middle" fill="#4a6060" font-size="8">sample via mon_cb</text>
+      <path d="M 575 204 V 267 H 450" fill="none" stroke="#ffb800" stroke-width="1.3" marker-end="url(#a3)"/>
+
+      <!-- mem_cov -->
+      <rect x="70" y="240" width="110" height="54" rx="2" fill="#0d1117" stroke="#c084fc"/>
+      <text x="125" y="262" text-anchor="middle" fill="#c084fc" font-size="10" font-weight="600">mem_cov</text>
+      <text x="125" y="277" text-anchor="middle" fill="#4a6060" font-size="8">cg.sample()</text>
+
+      <!-- mon2cov mailbox -->
+      <rect x="220" y="248" width="80" height="38" rx="2" fill="#111820" stroke="#4a6060"/>
+      <text x="260" y="264" text-anchor="middle" fill="#c8d8c8" font-size="8">mon2cov</text>
+      <text x="260" y="276" text-anchor="middle" fill="#4a6060" font-size="7">mailbox</text>
+      <line x1="340" y1="267" x2="300" y2="267" stroke="#c084fc" stroke-width="1.3" marker-end="url(#a4)"/>
+      <line x1="220" y1="267" x2="180" y2="267" stroke="#c084fc" stroke-width="1.3" marker-end="url(#a4)"/>
+
+      <!-- mem_scb outside agnt, inside env -->
+      <rect x="700" y="196" width="130" height="60" rx="2" fill="#0d1117" stroke="#ff4455"/>
+      <text x="765" y="220" text-anchor="middle" fill="#ff4455" font-size="10" font-weight="600">mem_scb</text>
+      <text x="765" y="236" text-anchor="middle" fill="#4a6060" font-size="8">shadow mem[*]</text>
+      <text x="765" y="248" text-anchor="middle" fill="#4a6060" font-size="8">match / mismatch</text>
+
+      <!-- mon2scb mailbox -->
+      <rect x="590" y="248" width="80" height="38" rx="2" fill="#111820" stroke="#4a6060"/>
+      <text x="630" y="264" text-anchor="middle" fill="#c8d8c8" font-size="8">mon2scb</text>
+      <text x="630" y="276" text-anchor="middle" fill="#4a6060" font-size="7">mailbox</text>
+      <path d="M 395 294 V 310 H 630" fill="none" stroke="#ffb800" stroke-width="1.3"/>
+      <line x1="630" y1="310" x2="630" y2="286" stroke="#ffb800" stroke-width="1.3" marker-end="url(#a3)"/>
+      <line x1="670" y1="260" x2="765" y2="256" stroke="#ff4455" stroke-width="1.3" marker-end="url(#a3)"/>
+
+      <text x="480" y="30" text-anchor="middle" fill="#4a6060" font-size="8" letter-spacing="1">common:: static class — testcase, N, matching, mismatch, bfm_count</text>
+    </svg>
+  </div>
+</section>
+
+<!-- WORKING PRINCIPLE -->
+<section id="working">
+  <div class="sec-label">MODULE_03 &nbsp; OPERATION</div>
+  <h2 class="sec-title">VERIFICATION <span>FLOW</span></h2>
+  <div class="phases-grid reveal">
+    <div class="phase-card gen-c">
+      <div class="phase-icon">⌘</div>
+      <div class="phase-title">GENERATE</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--cyan)">mem_gen</code> selects testcase from <code style="color:var(--cyan)">common::testcase</code></li>
+        <li><code style="color:var(--cyan)">tx.randomize()</code> with inline constraints</li>
+        <li>For read-after-write, address is captured in a <code style="color:var(--cyan)">mem_tx temp[$]</code> queue</li>
+        <li>Pushed to <code style="color:var(--cyan)">gen2bfm</code> mailbox</li>
+      </ul>
+    </div>
+    <div class="phase-card drv-c">
+      <div class="phase-icon">▶</div>
+      <div class="phase-title">DRIVE</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--green)">mem_bfm</code> gets tx from <code style="color:var(--green)">gen2bfm</code></li>
+        <li>Drives pins via <code style="color:var(--green)">vif.bfm_cb</code> clocking block</li>
+        <li>Asserts <code style="color:var(--green)">valid_i</code>, waits for <code style="color:var(--green)">ready_o</code></li>
+        <li>Resets signals, increments <code style="color:var(--green)">common::bfm_count</code></li>
+      </ul>
+    </div>
+    <div class="phase-card mon-c">
+      <div class="phase-icon">◈</div>
+      <div class="phase-title">SAMPLE</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--amber)">mem_mon</code> is a passive, pin-to-transaction observer</li>
+        <li>Samples on <code style="color:var(--amber)">vif.mon_cb</code> when <code style="color:var(--amber)">valid_i &amp; ready_o</code></li>
+        <li>Rebuilds <code style="color:var(--amber)">mem_tx</code> from bus activity</li>
+        <li>Broadcasts to <code style="color:var(--amber)">mon2scb</code> and <code style="color:var(--amber)">mon2cov</code></li>
+      </ul>
+    </div>
+    <div class="phase-card chk-c">
+      <div class="phase-icon">✓</div>
+      <div class="phase-title">CHECK</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--red)">mem_scb</code> keeps a shadow <code style="color:var(--red)">bit [width-1:0] mem[*]</code></li>
+        <li>On write: updates shadow entry at <code style="color:var(--red)">addr_i</code></li>
+        <li>On read: compares DUT <code style="color:var(--red)">rdata_o</code> to shadow value</li>
+        <li>Increments <code style="color:var(--red)">common::matching</code> / <code style="color:var(--red)">mismatch</code></li>
+      </ul>
+    </div>
+    <div class="phase-card cov-c">
+      <div class="phase-icon">⬡</div>
+      <div class="phase-title">COVER</div>
+      <ul class="phase-conds">
+        <li><code style="color:var(--purple)">mem_cov</code> owns a <code style="color:var(--purple)">covergroup cg</code></li>
+        <li>Coverpoints on <code style="color:var(--purple)">wr_rd_i</code> and <code style="color:var(--purple)">addr_i</code></li>
+        <li>Cross bin <code style="color:var(--purple)">WR_RD_X_ADDR</code></li>
+        <li><code style="color:var(--purple)">cg.sample()</code> called per transaction from <code style="color:var(--purple)">mon2cov</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- TESTCASES -->
+<section id="testcases">
+  <div class="sec-label">MODULE_04 &nbsp; TESTPLAN</div>
+  <h2 class="sec-title">DIRECTED <span>TESTCASES</span></h2>
+  <div class="tc-grid reveal">
+    <div class="tc-card tc-1w">
+      <span class="tc-tag">TC_01</span>
+      <div class="tc-name">1_WRITE</div>
+      <div class="tc-desc">Randomizes and issues a single <code style="color:var(--cyan)">wr_rd_i = 1</code> transaction. Baseline sanity check for a lone write handshake.</div>
+      <div class="tc-seq">Sequence: <span>randomize(WRITE) ×1</span></div>
+    </div>
+    <div class="tc-card tc-nw">
+      <span class="tc-tag">TC_02</span>
+      <div class="tc-name">N_WRITE</div>
+      <div class="tc-desc">Loops <code style="color:var(--green)">common::N</code> times, each a randomized write. Exercises the generator/BFM handshake loop under repetition.</div>
+      <div class="tc-seq">Sequence: <span>randomize(WRITE) ×N</span></div>
+    </div>
+    <div class="tc-card tc-1wr">
+      <span class="tc-tag">TC_03</span>
+      <div class="tc-name">1_WRITE_1_READ</div>
+      <div class="tc-desc">Writes to a random address, pushes it onto a queue, then issues a read constrained to that <em>same</em> address — a directed read-after-write check.</div>
+      <div class="tc-seq">Sequence: <span>write(addr=A) → read(addr=A)</span></div>
+    </div>
+    <div class="tc-card tc-nwr">
+      <span class="tc-tag">TC_04</span>
+      <div class="tc-name">N_WRITE_N_READ</div>
+      <div class="tc-desc">Default testcase. N writes to a queue of addresses, then N reads popped back in reverse order — full read-after-write coverage across the address space.</div>
+      <div class="tc-seq">Sequence: <span>write(addr) ×N → read(addr) ×N</span></div>
+    </div>
+  </div>
+  <div class="tc-note">⚙ Selected via <code>common::testcase</code> (default <code>"N_WRITE_N_READ"</code>) and <code>common::N</code> (default <code>5</code>) in <code>mem_common.sv</code> — change the static string to switch testcases, no plusargs used in this version.</div>
+</section>
+
+<!-- ASSERTIONS -->
+<section id="assertions">
+  <div class="sec-label">MODULE_05 &nbsp; PROTOCOL CHECKS</div>
+  <h2 class="sec-title">SVA <span>ASSERTIONS</span></h2>
+  <p class="sec-sub">Six immediate protocol properties live directly inside <code style="color:var(--amber)">mem_intf.sv</code>, firing on every clock regardless of which testcase is active.</p>
+  <div class="assert-grid reveal">
+    <div class="assert-card">
+      <div class="assert-head"><span class="assert-name">HANDSHAKE</span><span class="assert-id">p1</span></div>
+      <div class="assert-body"><code>valid_i == 1 |=> ready_o == 1</code><br>Every valid request must be acknowledged the next cycle.</div>
+    </div>
+    <div class="assert-card">
+      <div class="assert-head"><span class="assert-name">WR_RD</span><span class="assert-id">p2</span></div>
+      <div class="assert-body"><code>(valid_i &amp;&amp; ready_o) |-> !$isunknown(wr_rd_i)</code><br>Direction must be known during an accepted transfer.</div>
+    </div>
+    <div class="assert-card">
+      <div class="assert-head"><span class="assert-name">ADDR_1</span><span class="assert-id">p3</span></div>
+      <div class="assert-body"><code>wr_rd_i == 1 |-> !$isunknown(addr_i)</code><br>Address must be known on every write.</div>
+    </div>
+    <div class="assert-card">
+      <div class="assert-head"><span class="assert-name">WDATA</span><span class="assert-id">p4</span></div>
+      <div class="assert-body"><code>wr_rd_i == 1 |-> !$isunknown(wdata_i)</code><br>Write data must be known on every write.</div>
+    </div>
+    <div class="assert-card">
+      <div class="assert-head"><span class="assert-name">ADDR_2</span><span class="assert-id">p5</span></div>
+      <div class="assert-body"><code>wr_rd_i == 0 |-> !$isunknown(addr_i)</code><br>Address must be known on every read.</div>
+    </div>
+    <div class="assert-card">
+      <div class="assert-head"><span class="assert-name">RDATA</span><span class="assert-id">p6</span></div>
+      <div class="assert-body"><code>wr_rd_i == 0 |-> !$isunknown(rdata_o)</code><br>Read data must resolve to a known value.</div>
+    </div>
+  </div>
+</section>
+
+<!-- COVERAGE -->
+<section id="coverage">
+  <div class="sec-label">MODULE_06 &nbsp; FUNCTIONAL COVERAGE</div>
+  <h2 class="sec-title">COVERAGE <span>MODEL</span></h2>
+  <div class="cov-wrap reveal">
+    <div class="cov-img-wrap">
+      <div class="cov-label">QuestaSim :: covergroup cg — N_WRITE_N_READ</div>
+      <img
+        src="https://github.com/monish-sr/memory-system-verilog/raw/main/sv_mem_covergroup.png"
+        alt="SystemVerilog memory testbench functional coverage report"
+        loading="lazy"
+        style="width:100%;display:block;filter:brightness(1.05) saturate(1.1)"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      >
+      <div style="display:none;padding:40px;text-align:center;color:var(--muted);flex-direction:column;gap:10px;align-items:center">
+        <span style="font-size:24px">📊</span>
+        <span style="font-size:12px">Coverage report — view on GitHub</span>
+        <a href="https://github.com/monish-sr/memory-system-verilog/blob/main/sv_mem_covergroup.png" target="_blank" class="btn btn-cyan" style="margin-top:8px;font-size:11px">OPEN COVERAGE</a>
+      </div>
+    </div>
+    <div class="cov-detail">
+      <div class="cov-block">
+        <div class="cov-block-head">// COVERPOINT: WR_RD</div>
+        <div class="cov-bins">
+          <span class="cov-bin">WRITE = {1'b1}</span>
+          <span class="cov-bin">READ = {1'b0}</span>
+        </div>
+      </div>
+      <div class="cov-block">
+        <div class="cov-block-head">// COVERPOINT: ADDR</div>
+        <div class="cov-bins">
+          <span class="cov-bin">LOWER_ADDR = [0:3]</span>
+          <span class="cov-bin">LOWER_MID_ADDR = [4:7]</span>
+          <span class="cov-bin">MID_ADDR = [8:11]</span>
+          <span class="cov-bin">UPPER_ADDR = [12:15]</span>
+        </div>
+      </div>
+      <div class="cov-block">
+        <div class="cov-block-head">// CROSS: WR_RD_X_ADDR</div>
+        <div class="cov-bins">
+          <span class="cov-bin">cross WR_RD, ADDR {}</span>
+        </div>
+      </div>
+      <div class="tc-note">⚙ Compile flow uses <code>vopt +cover=fcbest</code> and <code>vsim -coverage</code>, with results archived to <code>N_WRITE_READ.ucdb</code> via <code>coverage save -onexit</code>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- WAVEFORM -->
+<section id="waveform">
+  <div class="sec-label">MODULE_07 &nbsp; SIMULATION</div>
+  <h2 class="sec-title">WAVEFORM <span>OUTPUT</span></h2>
+  <div class="reveal">
+    <div class="wave-note">
+      ⚡ Captured from QuestaSim — default testcase <strong style="color:var(--green)">N_WRITE_N_READ</strong>, seed <code style="color:var(--amber)">-sv_seed 85132</code>. Signals loaded via <code style="color:var(--amber)">do wave.do</code> from <code>run.do</code>.
+    </div>
+    <div class="wave-img-wrap">
+      <div class="wave-label">QuestaSim :: top — TC: N_WRITE_N_READ</div>
+      <img
+        src="https://github.com/monish-sr/memory-system-verilog/raw/main/sv_mem_waveform.png"
+        alt="QuestaSim Waveform - Memory Testbench N_WRITE_N_READ"
+        loading="lazy"
+        style="width:100%;display:block;filter:brightness(1.05) saturate(1.1)"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      >
+      <div style="display:none;padding:40px;text-align:center;color:var(--muted);flex-direction:column;gap:10px;align-items:center">
+        <span style="font-size:24px">📊</span>
+        <span style="font-size:12px">Waveform image — view on GitHub</span>
+        <a href="https://github.com/monish-sr/memory-system-verilog/blob/main/sv_mem_waveform.png" target="_blank" class="btn btn-cyan" style="margin-top:8px;font-size:11px">OPEN WAVEFORM</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SIM SCRIPT -->
+<section id="simscript">
+  <div class="sec-label">MODULE_08 &nbsp; RUN SCRIPT</div>
+  <h2 class="sec-title">run.do <span>&amp; PASS/FAIL</span></h2>
+  <div class="reveal">
+    <div class="run-do-box">
+      <div class="run-do-head">⚙ run.do — QuestaSim Script</div>
+      <div class="run-do-body">
+        <pre style="font-size:12px;line-height:1.9"><span style="color:var(--cyan)">vlib</span> <span style="color:var(--green)">work</span>
+<span style="color:var(--cyan)">vlog</span> <span style="color:var(--amber)">list.svh</span>
+<span style="color:var(--cyan)">vopt</span> <span style="color:var(--green)">top</span> <span style="color:var(--red)">+cover=fcbest</span> -o <span style="color:var(--amber)">N_WRITE_N_READ</span>
+<span style="color:var(--cyan)">vsim</span> -assertdebug -coverage <span style="color:var(--amber)">N_WRITE_N_READ</span> -l mem.log -sv_seed <span style="color:var(--amber)">85132</span>
+<span style="color:var(--cyan)">vsim</span> -novopt -suppress 12110 <span style="color:var(--green)">top</span> -l mem.log
+<span style="color:var(--cyan)">coverage save</span> -onexit <span style="color:var(--amber)">N_WRITE_READ.ucdb</span>
+<span style="color:var(--cyan)">do</span> <span style="color:var(--amber)">wave.do</span>
+<span style="color:var(--cyan)">run</span> -all</pre>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px">Change <code style="color:var(--amber)">common::testcase</code> in <code style="color:var(--red)">mem_common.sv</code> to <code style="color:var(--amber)">"1_WRITE"</code>, <code style="color:var(--amber)">"N_WRITE"</code>, or <code style="color:var(--amber)">"1_WRITE_1_READ"</code> to run other test scenarios.</div>
+      </div>
+    </div>
+
+    <div class="pf-box">
+      <div class="pf-head">// PASS/FAIL CHECK — top.sv</div>
+      <pre><span class="kw">initial begin</span>
+  <span class="kw">wait</span>(common::bfm_count == common::N*2);
+  <span class="kw">if</span>(common::matching != 0 &amp;&amp; common::matching == common::N &amp;&amp; common::mismatch == 0)
+    $display(<span class="str">"TESTCASE PASSED!\nMatching: %0d | Mismatching: %0d | Count: %0d"</span>, common::matching, common::mismatch, common::bfm_count);
+  <span class="kw">else</span> $display(<span class="str">"TESTCASE FAILED!\nMatching: %0d | Mismatching: %0d | Count: %0d"</span>, common::matching, common::mismatch, common::bfm_count);
+<span class="kw">end</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- SOURCE CODE -->
+<section id="code">
+  <div class="sec-label">MODULE_09 &nbsp; SOURCE</div>
+  <h2 class="sec-title">SOURCE <span>CODE</span></h2>
+  <div class="reveal">
+    <div class="code-viewer">
+      <div class="code-titlebar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span style="margin-left:8px;">monish-sr / memory-system-verilog</span>
+      </div>
+      <div class="code-tabs">
+        <div class="ctab active" onclick="switchTab('dut')">memory_dut.v</div>
+        <div class="ctab" onclick="switchTab('intf')">mem_intf.sv</div>
+        <div class="ctab" onclick="switchTab('tx')">mem_tx.sv</div>
+        <div class="ctab" onclick="switchTab('gen')">mem_gen.sv</div>
+        <div class="ctab" onclick="switchTab('bfm')">mem_bfm.sv</div>
+        <div class="ctab" onclick="switchTab('mon')">mem_mon.sv</div>
+        <div class="ctab" onclick="switchTab('scb')">mem_scb.sv</div>
+        <div class="ctab" onclick="switchTab('cov')">mem_cov.sv</div>
+        <div class="ctab" onclick="switchTab('common')">mem_common.sv</div>
+        <div class="ctab" onclick="switchTab('top')">top.sv</div>
+        <div class="ctab" onclick="switchTab('list')">list.svh</div>
+      </div>
+      <div class="code-body">
+
+        <pre id="pane-dut" class="cpane active"><span class="kw">module</span> <span class="mod">memory_dut</span> <span class="parm">#(</span><span class="kw">parameter</span> <span class="sig">depth</span> <span class="op">=</span> <span class="num">16</span>, <span class="sig">width</span> <span class="op">=</span> <span class="num">4</span>,
+                     <span class="sig">addr_width</span> <span class="op">=</span> <span class="kw">$clog2</span>(<span class="sig">depth</span>)<span class="parm">)</span>
+  (<span class="sig">clk_i</span>,<span class="sig">rst_i</span>,<span class="sig">wr_rd_i</span>,<span class="sig">wdata_i</span>,<span class="sig">rdata_o</span>,
+   <span class="sig">addr_i</span>,<span class="sig">valid_i</span>,<span class="sig">ready_o</span>);
+
+<span class="kw">input</span> <span class="sig">clk_i</span>,<span class="sig">rst_i</span>,<span class="sig">wr_rd_i</span>,<span class="sig">valid_i</span>;
+<span class="kw">input</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">wdata_i</span>;
+<span class="kw">input</span> [<span class="sig">addr_width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">addr_i</span>;
+<span class="kw">output reg</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">rdata_o</span>;
+<span class="kw">output reg</span> <span class="sig">ready_o</span>;
+
+<span class="kw">reg</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] mem [<span class="sig">depth</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>];
+<span class="kw">integer</span> i;
+
+<span class="kw">always</span>@(<span class="kw">posedge</span> <span class="sig">clk_i</span> <span class="kw">or posedge</span> <span class="sig">rst_i</span>) <span class="kw">begin</span>
+  <span class="kw">if</span>(<span class="sig">rst_i</span>) <span class="kw">begin</span>
+    <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+    <span class="sig">rdata_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+    <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span><span class="sig">depth</span>; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) <span class="kw">begin</span>
+      mem[i] <span class="op">&lt;=</span> <span class="num">0</span>;
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+  <span class="kw">else begin</span>
+    <span class="kw">if</span>(<span class="sig">valid_i</span>) <span class="kw">begin</span>
+      <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">1</span>;
+      <span class="kw">if</span>(<span class="sig">wr_rd_i</span>) mem[<span class="sig">addr_i</span>] <span class="op">&lt;=</span> <span class="sig">wdata_i</span>;
+      <span class="kw">else</span> <span class="sig">rdata_o</span> <span class="op">&lt;=</span> mem[<span class="sig">addr_i</span>];
+    <span class="kw">end</span>
+    <span class="kw">else</span> <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
+  <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="kw">endmodule</span></pre>
+
+        <pre id="pane-intf" class="cpane"><span class="kw">interface</span> <span class="mod">mem_intf</span>(<span class="kw">input</span> <span class="sig">clk</span>,<span class="sig">rst</span>);
+
+<span class="kw">logic</span> <span class="sig">wr_rd_i</span>;
+<span class="kw">logic</span> <span class="sig">valid_i</span>;
+<span class="kw">logic</span> [<span class="str">`width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">wdata_i</span>;
+<span class="kw">logic</span> [<span class="str">`addr_width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">addr_i</span>;
+<span class="kw">logic</span> [<span class="str">`width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">rdata_o</span>;
+<span class="kw">logic</span> <span class="sig">ready_o</span>;
+
+<span class="cmt">// Monitor-side clocking block (sampling)</span>
+<span class="kw">clocking</span> mon_cb <span class="op">@</span>(<span class="kw">posedge</span> <span class="sig">clk</span>);
+  <span class="kw">input</span> <span class="sig">wr_rd_i</span>;
+  <span class="kw">input</span> <span class="op">#1</span> <span class="sig">valid_i</span>;
+  <span class="kw">input</span> <span class="sig">wdata_i</span>;
+  <span class="kw">input</span> <span class="sig">addr_i</span>;
+  <span class="kw">input</span> <span class="sig">rdata_o</span>;
+  <span class="kw">input</span> <span class="op">#1</span> <span class="sig">ready_o</span>;
+<span class="kw">endclocking</span>
+
+<span class="cmt">// BFM-side clocking block (driving)</span>
+<span class="kw">clocking</span> bfm_cb <span class="op">@</span>(<span class="kw">posedge</span> <span class="sig">clk</span>);
+  <span class="kw">input</span> <span class="op">#1</span> <span class="sig">ready_o</span>;
+  <span class="kw">input</span> <span class="sig">rdata_o</span>;
+  <span class="kw">output</span> <span class="sig">wr_rd_i</span>;
+  <span class="kw">output</span> <span class="sig">valid_i</span>;
+  <span class="kw">output</span> <span class="sig">wdata_i</span>;
+  <span class="kw">output</span> <span class="sig">addr_i</span>;
+<span class="kw">endclocking</span>
+
+<span class="cmt">// Protocol assertions (see MODULE_05)</span>
+<span class="kw">property</span> p1; <span class="op">@</span>(<span class="kw">posedge</span> <span class="sig">clk</span>) (<span class="sig">valid_i</span> <span class="op">==</span> <span class="num">1</span>) <span class="op">|=&gt;</span> (<span class="sig">ready_o</span> <span class="op">==</span> <span class="num">1</span>); <span class="kw">endproperty</span>
+<span class="kw">property</span> p2; <span class="op">@</span>(<span class="kw">posedge</span> <span class="sig">clk</span>) ((<span class="sig">valid_i</span><span class="op">==</span><span class="num">1</span>) <span class="op">&amp;&amp;</span> (<span class="sig">ready_o</span><span class="op">==</span><span class="num">1</span>)) <span class="op">|-&gt;</span> <span class="op">!</span>(<span class="kw">$isunknown</span>(<span class="sig">wr_rd_i</span>)); <span class="kw">endproperty</span>
+<span class="kw">property</span> p3; <span class="op">@</span>(<span class="kw">posedge</span> <span class="sig">clk</span>) (<span class="sig">wr_rd_i</span><span class="op">==</span><span class="num">1</span>) <span class="op">|-&gt;</span> <span class="op">!</span>(<span class="kw">$isunknown</span>(<span class="sig">addr_i</span>)); <span class="kw">endproperty</span>
+<span class="kw">property</span> p4; <span class="op">@</span>(<span class="kw">posedge</span> <span class="sig">clk</span>) (<span class="sig">wr_rd_i</span><span class="op">==</span><span class="num">1</span>) <span class="op">|-&gt;</span> <span class="op">!</span>(<span class="kw">$isunknown</span>(<span class="sig">wdata_i</span>)); <span class="kw">endproperty</span>
+<span class="kw">property</span> p5; <span class="op">@</span>(<span class="kw">posedge</span> <span class="sig">clk</span>) (<span class="sig">wr_rd_i</span><span class="op">==</span><span class="num">0</span>) <span class="op">|-&gt;</span> <span class="op">!</span>(<span class="kw">$isunknown</span>(<span class="sig">addr_i</span>)); <span class="kw">endproperty</span>
+<span class="kw">property</span> p6; <span class="op">@</span>(<span class="kw">posedge</span> <span class="sig">clk</span>) (<span class="sig">wr_rd_i</span><span class="op">==</span><span class="num">0</span>) <span class="op">|-&gt;</span> <span class="op">!</span>(<span class="kw">$isunknown</span>(<span class="sig">rdata_o</span>)); <span class="kw">endproperty</span>
+
+HANDSHAKE: <span class="kw">assert property</span>(p1) <span class="kw">else</span> <span class="kw">$error</span>(<span class="str">"HANDSHAKE Assertion Failed!"</span>);
+WR_RD:     <span class="kw">assert property</span>(p2) <span class="kw">else</span> <span class="kw">$error</span>(<span class="str">"WR_RD Assertion Failed!"</span>);
+ADDR_1:    <span class="kw">assert property</span>(p3) <span class="kw">else</span> <span class="kw">$error</span>(<span class="str">"ADDR_1 Assertion Failed!"</span>);
+WDATA:     <span class="kw">assert property</span>(p4) <span class="kw">else</span> <span class="kw">$error</span>(<span class="str">"WDATA Assertion Failed!"</span>);
+ADDR_2:    <span class="kw">assert property</span>(p5) <span class="kw">else</span> <span class="kw">$error</span>(<span class="str">"ADDR_2 Assertion Failed!"</span>);
+RDATA:     <span class="kw">assert property</span>(p6) <span class="kw">else</span> <span class="kw">$error</span>(<span class="str">"RDATA Assertion Failed!"</span>);
+
+<span class="kw">endinterface</span></pre>
+
+        <pre id="pane-tx" class="cpane"><span class="kw">class</span> <span class="mod">mem_tx</span>;
+
+<span class="kw">rand bit</span> [<span class="str">`width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">wdata_i</span>;
+<span class="kw">rand bit</span> [<span class="str">`addr_width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">addr_i</span>;
+<span class="kw">rand bit</span> <span class="sig">wr_rd_i</span>;
+<span class="kw">bit</span> [<span class="str">`width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">rdata_o</span>;
+
+<span class="kw">constraint</span> c1{ <span class="sig">wdata_i</span> <span class="kw">inside</span> {[<span class="num">1</span>:<span class="num">256</span>]}; }
+
+<span class="kw">function void</span> print(<span class="kw">string</span> name <span class="op">=</span> <span class="str">"TX_CLASS"</span>);
+  <span class="kw">$display</span>(<span class="str">"---------------- Name: %s | Time: %0t ----------------"</span>,name,<span class="kw">$time</span>);
+  <span class="kw">$display</span>(<span class="str">"wr_rd_i: %0b"</span>,<span class="sig">wr_rd_i</span>);
+  <span class="kw">$display</span>(<span class="str">"Address: %0d"</span>,<span class="sig">addr_i</span>);
+  <span class="kw">$display</span>(<span class="str">"WData: %0d"</span>,<span class="sig">wdata_i</span>);
+  <span class="kw">$display</span>(<span class="str">"RData: %0d\n"</span>,<span class="sig">rdata_o</span>);
+<span class="kw">endfunction</span>
+
+<span class="kw">endclass</span></pre>
+
+        <pre id="pane-gen" class="cpane"><span class="kw">class</span> <span class="mod">mem_gen</span>;
+
+<span class="sig">mem_tx</span> tx;
+<span class="sig">mem_tx</span> temp[<span class="op">$</span>];
+<span class="sig">mem_tx</span> t;
+
+<span class="kw">task</span> <span class="mod">run</span>();
+  <span class="kw">case</span>(common<span class="op">::</span>testcase)
+    <span class="str">"1_WRITE"</span>: <span class="kw">begin</span>
+      tx <span class="op">=</span> <span class="kw">new</span>();
+      <span class="kw">assert</span>(tx.randomize() <span class="kw">with</span> {tx.wr_rd_i <span class="op">==</span> <span class="num">1</span>;});
+      gen2bfm.put(tx);
+    <span class="kw">end</span>
+    <span class="str">"N_WRITE"</span>: <span class="kw">begin</span>
+      <span class="kw">repeat</span>(common<span class="op">::</span>N) <span class="kw">begin</span>
+        tx <span class="op">=</span> <span class="kw">new</span>();
+        <span class="kw">assert</span>(tx.randomize() <span class="kw">with</span> {tx.wr_rd_i <span class="op">==</span> <span class="num">1</span>;});
+        gen2bfm.put(tx);
+      <span class="kw">end</span>
+    <span class="kw">end</span>
+    <span class="str">"1_WRITE_1_READ"</span>: <span class="kw">begin</span>
+      <span class="kw">begin</span>
+        tx <span class="op">=</span> <span class="kw">new</span>();
+        <span class="kw">assert</span>(tx.randomize() <span class="kw">with</span> {tx.wr_rd_i <span class="op">==</span> <span class="num">1</span>;});
+        temp.push_front(tx);
+        gen2bfm.put(tx);
+      <span class="kw">end</span>
+      <span class="kw">begin</span>
+        tx <span class="op">=</span> <span class="kw">new</span>();
+        t <span class="op">=</span> temp.pop_back();
+        <span class="kw">assert</span>(tx.randomize() <span class="kw">with</span> {tx.wr_rd_i <span class="op">==</span> <span class="num">0</span>; tx.addr_i <span class="op">==</span> t.addr_i;});
+        gen2bfm.put(tx);
+      <span class="kw">end</span>
+    <span class="kw">end</span>
+    <span class="str">"N_WRITE_N_READ"</span>: <span class="kw">begin</span>
+      <span class="kw">repeat</span> (common<span class="op">::</span>N) <span class="kw">begin</span>
+        tx <span class="op">=</span> <span class="kw">new</span>();
+        <span class="kw">assert</span>(tx.randomize() <span class="kw">with</span> {tx.wr_rd_i <span class="op">==</span> <span class="num">1</span>;});
+        temp.push_front(tx);
+        gen2bfm.put(tx);
+      <span class="kw">end</span>
+      <span class="kw">repeat</span> (common<span class="op">::</span>N) <span class="kw">begin</span>
+        tx <span class="op">=</span> <span class="kw">new</span>();
+        t <span class="op">=</span> temp.pop_back();
+        <span class="kw">assert</span>(tx.randomize() <span class="kw">with</span> {tx.wr_rd_i <span class="op">==</span> <span class="num">0</span>; tx.addr_i <span class="op">==</span> t.addr_i;});
+        gen2bfm.put(tx);
+      <span class="kw">end</span>
+    <span class="kw">end</span>
+    <span class="kw">default</span>: <span class="kw">$error</span>(<span class="str">"INVALID TESTCASE!"</span>);
+  <span class="kw">endcase</span>
+<span class="kw">endtask</span>
+
+<span class="kw">endclass</span></pre>
+
+        <pre id="pane-bfm" class="cpane"><span class="kw">class</span> <span class="mod">mem_bfm</span>; <span class="cmt">// tx lvl info to pin lvl info</span>
+
+<span class="sig">mem_tx</span> tx;
+<span class="kw">virtual</span> <span class="sig">mem_intf</span> vif;
+
+<span class="kw">function new</span>();
+  vif <span class="op">=</span> top.pif;
+<span class="kw">endfunction</span>
+
+<span class="kw">task</span> <span class="mod">run</span>();
+  <span class="kw">forever begin</span>
+    <span class="kw">wait</span>(top.rst <span class="op">==</span> <span class="num">0</span>);
+    gen2bfm.get(tx);
+    drive_tx(tx);
+  <span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="kw">task</span> <span class="mod">reset</span>();
+  vif.bfm_cb.wr_rd_i <span class="op">&lt;=</span> <span class="num">0</span>;
+  vif.bfm_cb.addr_i  <span class="op">&lt;=</span> <span class="num">0</span>;
+  vif.bfm_cb.wdata_i <span class="op">&lt;=</span> <span class="num">0</span>;
+  vif.bfm_cb.valid_i <span class="op">&lt;=</span> <span class="num">0</span>;
+  <span class="op">@</span>(vif.bfm_cb);
+<span class="kw">endtask</span>
+
+<span class="kw">task</span> <span class="mod">drive_tx</span>(<span class="sig">mem_tx</span> tx);
+  <span class="op">@</span>(vif.bfm_cb);
+  vif.bfm_cb.addr_i   <span class="op">&lt;=</span> tx.addr_i;
+  vif.bfm_cb.wr_rd_i  <span class="op">&lt;=</span> tx.wr_rd_i;
+  <span class="kw">if</span>(tx.wr_rd_i <span class="op">==</span> <span class="num">1</span>) vif.bfm_cb.wdata_i <span class="op">&lt;=</span> tx.wdata_i;
+  <span class="kw">else</span> vif.bfm_cb.wdata_i <span class="op">&lt;=</span> <span class="num">0</span>;
+  vif.bfm_cb.valid_i <span class="op">&lt;=</span> <span class="num">1</span>;
+  <span class="kw">wait</span>(vif.bfm_cb.ready_o <span class="op">==</span> <span class="num">1</span>);
+  vif.bfm_cb.valid_i <span class="op">&lt;=</span> <span class="num">0</span>;
+  reset();
+  common<span class="op">::</span>bfm_count<span class="op">++</span>;
+<span class="kw">endtask</span>
+
+<span class="kw">endclass</span></pre>
+
+        <pre id="pane-mon" class="cpane"><span class="kw">class</span> <span class="mod">mem_mon</span>; <span class="cmt">// pin lvl to tx lvl</span>
+
+<span class="sig">mem_tx</span> tx;
+<span class="kw">virtual</span> <span class="sig">mem_intf</span> vif;
+
+<span class="kw">function new</span>();
+  vif <span class="op">=</span> top.pif;
+<span class="kw">endfunction</span>
+
+<span class="kw">task</span> <span class="mod">run</span>();
+  <span class="kw">forever begin</span>
+    <span class="op">@</span>(vif.mon_cb);
+    <span class="kw">if</span>((vif.mon_cb.valid_i <span class="op">==</span> <span class="num">1</span>) <span class="op">&amp;&amp;</span> (vif.mon_cb.ready_o <span class="op">==</span> <span class="num">1</span>)) <span class="kw">begin</span>
+      tx <span class="op">=</span> <span class="kw">new</span>();
+      tx.wr_rd_i <span class="op">=</span> vif.mon_cb.wr_rd_i;
+      tx.addr_i  <span class="op">=</span> vif.mon_cb.addr_i;
+      <span class="kw">if</span>(tx.wr_rd_i <span class="op">==</span> <span class="num">1</span>) <span class="kw">begin</span>
+        tx.wdata_i <span class="op">=</span> vif.mon_cb.wdata_i;
+        mon2scb.put(tx);
+        mon2cov.put(tx);
+      <span class="kw">end</span>
+      <span class="kw">else begin</span>
+        tx.rdata_o <span class="op">=</span> vif.mon_cb.rdata_o;
+        mon2scb.put(tx);
+        mon2cov.put(tx);
+      <span class="kw">end</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="kw">endclass</span></pre>
+
+        <pre id="pane-scb" class="cpane"><span class="kw">class</span> <span class="mod">mem_scb</span>;
+
+<span class="sig">mem_tx</span> tx;
+<span class="kw">bit</span> [<span class="str">`width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] mem[<span class="op">*</span>]; <span class="cmt">// associative array shadow memory</span>
+
+<span class="kw">task</span> <span class="mod">run</span>();
+  <span class="kw">forever begin</span>
+    mon2scb.get(tx);
+    <span class="kw">if</span>(tx.wr_rd_i <span class="op">==</span> <span class="num">1</span>)
+      mem[tx.addr_i] <span class="op">=</span> tx.wdata_i;
+    <span class="kw">else begin</span>
+      <span class="kw">if</span>(tx.rdata_o <span class="op">==</span> mem[tx.addr_i]) common<span class="op">::</span>matching<span class="op">++</span>;
+      <span class="kw">else</span> common<span class="op">::</span>mismatch<span class="op">++</span>;
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="kw">endclass</span></pre>
+
+        <pre id="pane-cov" class="cpane"><span class="kw">class</span> <span class="mod">mem_cov</span>;
+
+<span class="sig">mem_tx</span> tx;
+
+<span class="kw">covergroup</span> cg;
+  WR_RD: <span class="kw">coverpoint</span> tx.wr_rd_i{
+    bins WRITE <span class="op">=</span> {<span class="num">1</span>'b1};
+    bins READ  <span class="op">=</span> {<span class="num">1</span>'b0};
+  }
+  ADDR: <span class="kw">coverpoint</span> tx.addr_i{
+    bins LOWER_ADDR     <span class="op">=</span> {[<span class="num">0</span>:<span class="num">3</span>]};
+    bins LOWER_MID_ADDR <span class="op">=</span> {[<span class="num">4</span>:<span class="num">7</span>]};
+    bins MID_ADDR       <span class="op">=</span> {[<span class="num">8</span>:<span class="num">11</span>]};
+    bins UPPER_ADDR     <span class="op">=</span> {[<span class="num">12</span>:<span class="num">15</span>]};
+  }
+  WR_RD_X_ADDR: <span class="kw">cross</span> WR_RD, ADDR{}
+<span class="kw">endgroup</span>
+
+<span class="kw">function new</span>();
+  cg <span class="op">=</span> <span class="kw">new</span>();
+<span class="kw">endfunction</span>
+
+<span class="kw">task</span> <span class="mod">run</span>();
+  <span class="kw">forever begin</span>
+    mon2cov.get(tx);
+    tx.print(<span class="str">"COV_TX"</span>);
+    cg.sample();
+  <span class="kw">end</span>
+<span class="kw">endtask</span>
+
+<span class="kw">endclass</span></pre>
+
+        <pre id="pane-common" class="cpane"><span class="kw">mailbox</span> gen2bfm <span class="op">=</span> <span class="kw">new</span>();
+<span class="kw">mailbox</span> mon2scb <span class="op">=</span> <span class="kw">new</span>();
+<span class="kw">mailbox</span> mon2cov <span class="op">=</span> <span class="kw">new</span>();
+
+<span class="kw">class</span> <span class="mod">common</span>;
+  <span class="kw">static string</span> testcase <span class="op">=</span> <span class="str">"N_WRITE_N_READ"</span>;
+  <span class="kw">static int</span> N <span class="op">=</span> <span class="num">5</span>;
+  <span class="kw">static int</span> matching;
+  <span class="kw">static int</span> mismatch;
+  <span class="kw">static int</span> bfm_count;
+<span class="kw">endclass</span></pre>
+
+        <pre id="pane-top" class="cpane"><span class="kw">module</span> <span class="mod">top</span>;
+
+<span class="kw">bit</span> clk,rst;
+<span class="sig">mem_env</span> env;
+<span class="sig">mem_intf</span> pif(clk,rst);
+
+<span class="mod">memory_dut</span> <span class="parm">#(.depth(</span><span class="str">`depth</span><span class="parm">), .width(</span><span class="str">`width</span><span class="parm">), .addr_width(</span><span class="str">`addr_width</span><span class="parm">))</span> dut
+(
+  .<span class="sig">clk_i</span>(clk), .<span class="sig">rst_i</span>(rst),
+  .<span class="sig">wr_rd_i</span>(pif.wr_rd_i), .<span class="sig">wdata_i</span>(pif.wdata_i),
+  .<span class="sig">rdata_o</span>(pif.rdata_o), .<span class="sig">addr_i</span>(pif.addr_i),
+  .<span class="sig">valid_i</span>(pif.valid_i), .<span class="sig">ready_o</span>(pif.ready_o)
+);
+
+<span class="kw">always</span> <span class="num">#5</span> clk<span class="op">=</span><span class="op">~</span>clk;
+
+<span class="kw">initial begin</span>
+  clk <span class="op">=</span> <span class="num">0</span>; rst <span class="op">=</span> <span class="num">1</span>;
+  pif.valid_i <span class="op">=</span> <span class="num">0</span>; pif.wr_rd_i <span class="op">=</span> <span class="num">0</span>;
+  pif.addr_i <span class="op">=</span> <span class="num">0</span>; pif.wdata_i <span class="op">=</span> <span class="num">0</span>;
+  <span class="kw">repeat</span>(<span class="num">2</span>) <span class="op">@</span>(<span class="kw">posedge</span> clk);
+  rst <span class="op">=</span> <span class="num">0</span>;
+<span class="kw">end</span>
+
+<span class="kw">initial begin</span>
+  env <span class="op">=</span> <span class="kw">new</span>();
+  env.run();
+<span class="kw">end</span>
+
+<span class="kw">initial</span> <span class="num">#1000</span> <span class="kw">$finish</span>();
+
+<span class="kw">initial begin</span>
+  <span class="kw">wait</span>(common<span class="op">::</span>bfm_count <span class="op">==</span> common<span class="op">::</span>N<span class="op">*</span><span class="num">2</span>);
+  <span class="kw">if</span>(common<span class="op">::</span>matching <span class="op">!=</span> <span class="num">0</span> <span class="op">&amp;&amp;</span> common<span class="op">::</span>matching <span class="op">==</span> common<span class="op">::</span>N <span class="op">&amp;&amp;</span> common<span class="op">::</span>mismatch <span class="op">==</span> <span class="num">0</span>)
+    <span class="kw">$display</span>(<span class="str">"TESTCASE PASSED!..."</span>);
+  <span class="kw">else</span> <span class="kw">$display</span>(<span class="str">"TESTCASE FAILED!..."</span>);
+<span class="kw">end</span>
+
+<span class="kw">endmodule</span></pre>
+
+        <pre id="pane-list" class="cpane"><span class="cmt">// list.svh — compile order + global defines</span>
+
+<span class="kw">`define</span> depth <span class="num">16</span>
+<span class="kw">`define</span> width <span class="num">4</span>
+<span class="kw">`define</span> addr_width <span class="kw">$clog2</span>(<span class="str">`depth</span>)
+
+<span class="kw">`include</span> <span class="str">"memory_dut.v"</span>
+<span class="kw">`include</span> <span class="str">"mem_intf.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_tx.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_common.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_cov.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_mon.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_bfm.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_gen.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_scb.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_agnt.sv"</span>
+<span class="kw">`include</span> <span class="str">"mem_env.sv"</span>
+<span class="kw">`include</span> <span class="str">"top.sv"</span></pre>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FILES -->
+<section id="files">
+  <div class="sec-label">MODULE_10 &nbsp; REPOSITORY</div>
+  <h2 class="sec-title">FILE <span>TREE</span></h2>
+  <div class="file-list reveal">
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/memory_dut.v" target="_blank">
+      <span class="file-icon">📄</span>
+      <span class="file-name">memory_dut.v</span>
+      <span class="file-meta"><span class="file-size">752 B</span> &nbsp;·&nbsp; 34 lines &nbsp;·&nbsp; DUT — valid/ready memory</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_intf.sv" target="_blank">
+      <span class="file-icon">🔌</span>
+      <span class="file-name">mem_intf.sv</span>
+      <span class="file-meta"><span class="file-size">1.54 KB</span> &nbsp;·&nbsp; 80 lines &nbsp;·&nbsp; Interface, 2 clocking blocks, 6 SVA</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_tx.sv" target="_blank">
+      <span class="file-icon">🧬</span>
+      <span class="file-name">mem_tx.sv</span>
+      <span class="file-meta"><span class="file-size">497 B</span> &nbsp;·&nbsp; 16 lines &nbsp;·&nbsp; Randomized transaction class</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_gen.sv" target="_blank">
+      <span class="file-icon">⌘</span>
+      <span class="file-name">mem_gen.sv</span>
+      <span class="file-meta"><span class="file-size">1.26 KB</span> &nbsp;·&nbsp; 61 lines &nbsp;·&nbsp; 4 directed testcase generator</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_bfm.sv" target="_blank">
+      <span class="file-icon">▶</span>
+      <span class="file-name">mem_bfm.sv</span>
+      <span class="file-meta"><span class="file-size">866 B</span> &nbsp;·&nbsp; 44 lines &nbsp;·&nbsp; Bus functional model / driver</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_mon.sv" target="_blank">
+      <span class="file-icon">◈</span>
+      <span class="file-name">mem_mon.sv</span>
+      <span class="file-meta"><span class="file-size">690 B</span> &nbsp;·&nbsp; 35 lines &nbsp;·&nbsp; Passive protocol monitor</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_scb.sv" target="_blank">
+      <span class="file-icon">✓</span>
+      <span class="file-name">mem_scb.sv</span>
+      <span class="file-meta"><span class="file-size">353 B</span> &nbsp;·&nbsp; 20 lines &nbsp;·&nbsp; Shadow-memory scoreboard</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_cov.sv" target="_blank">
+      <span class="file-icon">⬡</span>
+      <span class="file-name">mem_cov.sv</span>
+      <span class="file-meta"><span class="file-size">573 B</span> &nbsp;·&nbsp; 31 lines &nbsp;·&nbsp; Functional coverage collector</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_agnt.sv" target="_blank">
+      <span class="file-icon">🧩</span>
+      <span class="file-name">mem_agnt.sv</span>
+      <span class="file-meta"><span class="file-size">285 B</span> &nbsp;·&nbsp; 20 lines &nbsp;·&nbsp; Agent — forks gen/bfm/mon/cov</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_env.sv" target="_blank">
+      <span class="file-icon">🌐</span>
+      <span class="file-name">mem_env.sv</span>
+      <span class="file-meta"><span class="file-size">187 B</span> &nbsp;·&nbsp; 14 lines &nbsp;·&nbsp; Environment — forks agent/scb</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/mem_common.sv" target="_blank">
+      <span class="file-icon">📦</span>
+      <span class="file-name">mem_common.sv</span>
+      <span class="file-meta"><span class="file-size">245 B</span> &nbsp;·&nbsp; 11 lines &nbsp;·&nbsp; Mailboxes + static common class</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/top.sv" target="_blank">
+      <span class="file-icon">🏁</span>
+      <span class="file-name">top.sv</span>
+      <span class="file-meta"><span class="file-size">1.07 KB</span> &nbsp;·&nbsp; 50 lines &nbsp;·&nbsp; Top module, clock/reset, pass/fail</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/list.svh" target="_blank">
+      <span class="file-icon">📋</span>
+      <span class="file-name">list.svh</span>
+      <span class="file-meta"><span class="file-size">352 B</span> &nbsp;·&nbsp; 17 lines &nbsp;·&nbsp; Defines + compile order</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/run.do" target="_blank">
+      <span class="file-icon">⚙</span>
+      <span class="file-name">run.do</span>
+      <span class="file-meta"><span class="file-size">290 B</span> &nbsp;·&nbsp; 9 lines &nbsp;·&nbsp; QuestaSim run + coverage script</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/wave.do" target="_blank">
+      <span class="file-icon">📈</span>
+      <span class="file-name">wave.do</span>
+      <span class="file-meta">Wave signal load script</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/sv_mem_waveform.png" target="_blank">
+      <span class="file-icon">📊</span>
+      <span class="file-name">sv_mem_waveform.png</span>
+      <span class="file-meta">QuestaSim waveform capture</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/sv_mem_covergroup.png" target="_blank">
+      <span class="file-icon">📉</span>
+      <span class="file-name">sv_mem_covergroup.png</span>
+      <span class="file-meta">Functional coverage report</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/N_WRITE_READ.ucdb" target="_blank">
+      <span class="file-icon">🗄</span>
+      <span class="file-name">N_WRITE_READ.ucdb</span>
+      <span class="file-meta">Saved coverage database</span>
+    </a>
+    <a class="file-row" href="https://github.com/monish-sr/memory-system-verilog/blob/main/LICENSE" target="_blank">
+      <span class="file-icon">⚖</span>
+      <span class="file-name">LICENSE</span>
+      <span class="file-meta">MIT License</span>
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <a href="https://github.com/monish-sr/memory-system-verilog" target="_blank">github.com/monish-sr/memory-system-verilog</a>
+  </div>
+  <div>Built by <span>Monish S R</span> &nbsp;|&nbsp; SystemVerilog &nbsp;|&nbsp; MIT License</div>
+  <div><a href="https://github.com/monish-sr" target="_blank">← monish-sr</a></div>
+</footer>
+
+<script>
+function tick(){
+  const n=new Date(),p=v=>String(v).padStart(2,'0');
+  document.getElementById('live-clock').textContent=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
+}
+setInterval(tick,1000);tick();
+
+function switchTab(id){
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.cpane').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${id}')"]`).classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+}
+
+const ro=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');ro.unobserve(e.target);}});
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+</script>
+</body>
+</html>
