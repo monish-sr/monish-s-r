@@ -268,6 +268,18 @@ section{padding:72px 8vw;position:relative}
 .code-body::-webkit-scrollbar-thumb{background:var(--green)}
 .cpane{display:none}.cpane.active{display:block}
 
+/* SOURCE CTA */
+#source{background:var(--bg1)}
+.source-box{background:var(--bg3);border:1px solid var(--dim);padding:44px 40px;text-align:center;position:relative;overflow:hidden}
+.source-box::before{content:'// FULL_SOURCE';position:absolute;top:0;right:0;font-size:9px;color:var(--muted);letter-spacing:2px;padding:6px 10px;background:var(--bg2)}
+.source-icon{font-size:30px;margin-bottom:14px;color:var(--green)}
+.source-msg{font-family:var(--font-ui);font-size:15px;color:var(--text);letter-spacing:1px;max-width:520px;margin:0 auto 26px;line-height:1.8}
+.source-msg code{color:var(--amber)}
+.source-repo{font-size:11px;color:var(--muted);margin-top:18px;letter-spacing:1px}
+.source-repo a{color:var(--cyan);text-decoration:none}
+.source-repo a:hover{color:var(--green)}
+  
+  
 /* Syntax highlight classes */
 .kw{color:var(--purple)}.mod{color:var(--cyan)}.sig{color:var(--green)}
 .num{color:var(--amber)}.cmt{color:var(--muted);font-style:italic}
