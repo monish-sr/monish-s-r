@@ -605,157 +605,17 @@ footer a:hover{color:var(--green)}
   </div>
 </section>
 
-<!-- SOURCE CODE -->
-<section id="code">
-  <div class="sec-label">MODULE_05 &nbsp; SOURCE</div>
-  <h2 class="sec-title">SOURCE <span>CODE</span></h2>
-  <div class="reveal">
-    <div class="code-viewer">
-      <div class="code-titlebar">
-        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-        <span style="margin-left:8px;">monish-sr / memory-verilog</span>
-      </div>
-      <div class="code-tabs">
-        <div class="ctab active" onclick="switchTab('design')">memory_design.v</div>
-        <div class="ctab" onclick="switchTab('tb')">memory_tb.v</div>
-      </div>
-      <div class="code-body">
-        <pre id="pane-design" class="cpane active"><span class="cmt">// Memory Design</span>
-
-<span class="kw">module</span> <span class="mod">memory</span> <span class="parm">#(</span><span class="kw">parameter</span> <span class="sig">depth</span> <span class="op">=</span> <span class="num">16</span>, <span class="sig">width</span> <span class="op">=</span> <span class="num">4</span>,
-              <span class="sig">addr_width</span> <span class="op">=</span> <span class="kw">$clog2</span>(<span class="sig">depth</span>)<span class="parm">)</span>
-  (<span class="sig">clk_i</span>, <span class="sig">rst_i</span>, <span class="sig">wr_rd_i</span>, <span class="sig">valid_i</span>,
-   <span class="sig">wdata_i</span>, <span class="sig">addr_i</span>, <span class="sig">ready_o</span>, <span class="sig">rdata_o</span>);
-
-<span class="cmt">// Signal declarations</span>
-<span class="kw">input</span>  <span class="sig">clk_i</span>, <span class="sig">rst_i</span>, <span class="sig">wr_rd_i</span>, <span class="sig">valid_i</span>;
-<span class="kw">input</span>  [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>]      <span class="sig">wdata_i</span>;
-<span class="kw">input</span>  [<span class="sig">addr_width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">addr_i</span>;
-<span class="kw">integer</span> i;
-
-<span class="kw">output reg</span>             <span class="sig">ready_o</span>;
-<span class="kw">output reg</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">rdata_o</span>;
-<span class="kw">reg</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] mem [<span class="sig">depth</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>];
-
-<span class="kw">always</span>@(<span class="kw">posedge</span> <span class="sig">clk_i</span>) <span class="kw">begin</span>
-  <span class="kw">if</span>(<span class="sig">rst_i</span>) <span class="kw">begin</span>
-    <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
-    <span class="sig">rdata_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
-    <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span><span class="sig">depth</span>; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) mem[i] <span class="op">&lt;=</span> <span class="num">0</span>;
-  <span class="kw">end</span>
-  <span class="kw">else begin</span>
-    <span class="kw">if</span>(<span class="sig">valid_i</span>) <span class="kw">begin</span>
-      <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">1</span>;
-      <span class="kw">if</span>(<span class="sig">wr_rd_i</span>) mem[<span class="sig">addr_i</span>] <span class="op">&lt;=</span> <span class="sig">wdata_i</span>;
-      <span class="kw">else</span>        <span class="sig">rdata_o</span>   <span class="op">&lt;=</span> mem[<span class="sig">addr_i</span>];
-    <span class="kw">end</span>
-    <span class="kw">else</span> <span class="sig">ready_o</span> <span class="op">&lt;=</span> <span class="num">0</span>;
-  <span class="kw">end</span>
-<span class="kw">end</span>
-
-<span class="kw">endmodule</span></pre>
-
-        <pre id="pane-tb" class="cpane"><span class="str">`include "memory_design.v"</span>
-
-<span class="kw">module</span> <span class="mod">tb</span> <span class="parm">#(</span><span class="kw">parameter</span> <span class="sig">width</span><span class="op">=</span><span class="num">4</span>, <span class="sig">depth</span><span class="op">=</span><span class="num">16</span>,
-            <span class="sig">addr_width</span><span class="op">=</span><span class="kw">$clog2</span>(<span class="sig">depth</span>)<span class="parm">)</span>;
-
-<span class="kw">reg</span>  <span class="sig">clk_i</span>,<span class="sig">rst_i</span>,<span class="sig">valid_i</span>,<span class="sig">wr_rd_i</span>;
-<span class="kw">reg</span>  [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>]      <span class="sig">wdata_i</span>;
-<span class="kw">reg</span>  [<span class="sig">addr_width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>] <span class="sig">addr_i</span>;
-<span class="kw">integer</span> i;
-<span class="kw">wire</span>                   <span class="sig">ready_o</span>;
-<span class="kw">wire</span> [<span class="sig">width</span><span class="op">-</span><span class="num">1</span>:<span class="num">0</span>]       <span class="sig">rdata_o</span>;
-
-<span class="cmt">// DUT Instantiation</span>
-<span class="mod">memory</span> <span class="parm">#(.width(width),.depth(depth),.addr_width(addr_width))</span>
-  dut (.<span class="sig">clk_i</span>(<span class="sig">clk_i</span>), .<span class="sig">rst_i</span>(<span class="sig">rst_i</span>),
-       .<span class="sig">valid_i</span>(<span class="sig">valid_i</span>), .<span class="sig">wr_rd_i</span>(<span class="sig">wr_rd_i</span>),
-       .<span class="sig">wdata_i</span>(<span class="sig">wdata_i</span>), .<span class="sig">addr_i</span>(<span class="sig">addr_i</span>),
-       .<span class="sig">ready_o</span>(<span class="sig">ready_o</span>), .<span class="sig">rdata_o</span>(<span class="sig">rdata_o</span>));
-
-<span class="kw">always</span> <span class="num">#5</span> <span class="sig">clk_i</span> <span class="op">=</span> <span class="op">~</span><span class="sig">clk_i</span>;   <span class="cmt">// 10ns period</span>
-
-<span class="cmt">// ── RESET TASK ──────────────────────────</span>
-<span class="kw">task</span> <span class="mod">reset</span>();
-<span class="kw">begin</span>
-  <span class="sig">rst_i</span><span class="op">=</span><span class="num">1</span>; <span class="sig">wr_rd_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">wdata_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">valid_i</span><span class="op">=</span><span class="num">0</span>; <span class="sig">addr_i</span><span class="op">=</span><span class="num">0</span>;
-  <span class="kw">repeat</span>(<span class="num">2</span>) @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
-  <span class="sig">rst_i</span><span class="op">=</span><span class="num">0</span>;
-<span class="kw">end</span>
-<span class="kw">endtask</span>
-
-<span class="cmt">// ── WRITE TASK ──────────────────────────</span>
-<span class="kw">task</span> <span class="mod">write</span>();
-<span class="kw">begin</span>
-  <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span><span class="sig">depth</span>; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) <span class="kw">begin</span>
-    @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
-    <span class="sig">wr_rd_i</span> <span class="op">=</span> <span class="num">1</span>; <span class="sig">wdata_i</span> <span class="op">=</span> <span class="kw">$random</span>();
-    <span class="sig">addr_i</span>  <span class="op">=</span> i; <span class="sig">valid_i</span> <span class="op">=</span> <span class="num">1</span>;
-    <span class="kw">wait</span>(<span class="sig">ready_o</span> <span class="op">==</span> <span class="num">1</span>);
-  <span class="kw">end</span>
-  @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
-  {<span class="sig">wr_rd_i</span>,<span class="sig">wdata_i</span>,<span class="sig">addr_i</span>,<span class="sig">valid_i</span>} <span class="op">=</span> <span class="num">0</span>;
-<span class="kw">end</span>
-<span class="kw">endtask</span>
-
-<span class="cmt">// ── READ TASK ───────────────────────────</span>
-<span class="kw">task</span> <span class="mod">read</span>();
-<span class="kw">begin</span>
-  <span class="kw">for</span>(i<span class="op">=</span><span class="num">0</span>; i<span class="op">&lt;</span><span class="sig">depth</span>; i<span class="op">=</span>i<span class="op">+</span><span class="num">1</span>) <span class="kw">begin</span>
-    @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
-    <span class="sig">wr_rd_i</span> <span class="op">=</span> <span class="num">0</span>; <span class="sig">addr_i</span> <span class="op">=</span> i; <span class="sig">valid_i</span> <span class="op">=</span> <span class="num">1</span>;
-  <span class="kw">end</span>
-  @(<span class="kw">posedge</span> <span class="sig">clk_i</span>);
-  {<span class="sig">wr_rd_i</span>,<span class="sig">addr_i</span>,<span class="sig">valid_i</span>} <span class="op">=</span> <span class="num">0</span>;
-<span class="kw">end</span>
-<span class="kw">endtask</span>
-
-<span class="kw">initial begin</span>
-  <span class="sig">clk_i</span> <span class="op">=</span> <span class="num">0</span>;
-  <span class="mod">reset</span>();   <span class="cmt">// PHASE 1</span>
-  <span class="mod">write</span>();   <span class="cmt">// PHASE 2</span>
-  <span class="mod">read</span>();    <span class="cmt">// PHASE 3</span>
-<span class="kw">end</span>
-
-<span class="kw">initial</span> <span class="num">#1000</span> <span class="kw">$finish</span>();
-
-<span class="kw">endmodule</span></pre>
-      </div>
+<<!-- FULL SOURCE CTA -->
+<section id="source">
+  <div class="sec-label">MODULE_09 &nbsp; REPOSITORY</div>
+  <h2 class="sec-title">FULL <span>SOURCE</span></h2>
+  <div class="source-box reveal">
+    <div class="source-icon">⬡</div>
+    <div class="source-msg">
+      For more info, check out my GitHub repo — all 14 source files, the <code>README</code>, commit history, and the full <code>apb_design.v</code> → <code>apb_top.sv</code> compile order are up there.
     </div>
-  </div>
-</section>
-
-<!-- FILES -->
-<section id="files">
-  <div class="sec-label">MODULE_06 &nbsp; REPOSITORY</div>
-  <h2 class="sec-title">FILE <span>TREE</span></h2>
-  <div class="file-list reveal">
-    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/memory_design.v" target="_blank">
-      <span class="file-icon">📄</span>
-      <span class="file-name">memory_design.v</span>
-      <span class="file-meta"><span class="file-size">828 B</span> &nbsp;·&nbsp; 37 lines &nbsp;·&nbsp; Main design module</span>
-    </a>
-    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/memory_tb.v" target="_blank">
-      <span class="file-icon">🧪</span>
-      <span class="file-name">memory_tb.v</span>
-      <span class="file-meta"><span class="file-size">1.36 KB</span> &nbsp;·&nbsp; 82 lines &nbsp;·&nbsp; Testbench (3 tasks)</span>
-    </a>
-    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/Waveform%20-%20Memory.png" target="_blank">
-      <span class="file-icon">📊</span>
-      <span class="file-name">Waveform - Memory.png</span>
-      <span class="file-meta">ModelSim waveform output</span>
-    </a>
-    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/README.md" target="_blank">
-      <span class="file-icon">📋</span>
-      <span class="file-name">README.md</span>
-      <span class="file-meta">Project documentation</span>
-    </a>
-    <a class="file-row" href="https://github.com/monish-sr/memory-verilog/blob/main/LICENSE" target="_blank">
-      <span class="file-icon">⚖</span>
-      <span class="file-name">LICENSE</span>
-      <span class="file-meta">MIT License</span>
-    </a>
+    <a href="https://github.com/monish-sr/apb_protocol" target="_blank" class="btn btn-green">⬡ VIEW FULL SOURCE</a>
+    <div class="source-repo"><a href="https://github.com/monish-sr/apb_protocol" target="_blank">github.com/monish-sr/apb_protocol</a></div>
   </div>
 </section>
 
