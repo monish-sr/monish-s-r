@@ -715,43 +715,11 @@ footer a:hover{color:var(--green)}
   </div>
 </section>
 
-<!-- SIM SCRIPT -->
-<section id="simscript">
-  <div class="sec-label">MODULE_08 &nbsp; RUN SCRIPT</div>
-  <h2 class="sec-title">run.do <span>&amp; PASS/FAIL</span></h2>
-  <div class="reveal">
-    <div class="run-do-box">
-      <div class="run-do-head">⚙ run.do — QuestaSim Script</div>
-      <div class="run-do-body">
-        <pre style="font-size:12px;line-height:1.9"><span style="color:var(--cyan)">vlib</span> <span style="color:var(--green)">work</span>
-<span style="color:var(--cyan)">vlog</span> <span style="color:var(--amber)">list.svh</span>
-<span style="color:var(--cyan)">vopt</span> <span style="color:var(--green)">apb_top</span> <span style="color:var(--red)">+cover=fcbest</span> -o <span style="color:var(--amber)">NWRD</span>
-<span style="color:var(--cyan)">vsim</span> -assertdebug -coverage <span style="color:var(--amber)">NWRD</span> -l apb.log
-<span style="color:var(--cyan)">do</span> <span style="color:var(--amber)">wave.do</span>
-<span style="color:var(--cyan)">run</span> -all
-<span style="color:var(--cyan)">coverage save</span> -onexit <span style="color:var(--amber)">NWRD.ucdb</span></pre>
-        <div style="font-size:11px;color:var(--muted);margin-top:10px">Change <code style="color:var(--amber)">apb_common::testname</code> in <code style="color:var(--red)">apb_common.sv</code> to <code style="color:var(--amber)">"1W"</code>, <code style="color:var(--amber)">"5W"</code>, <code style="color:var(--amber)">"NW"</code>, <code style="color:var(--amber)">"1WRD"</code> or <code style="color:var(--amber)">"5WRD"</code> to run other scenarios.</div>
-      </div>
-    </div>
 
-    <div class="pf-box">
-      <div class="pf-head">// PASS/FAIL CHECK — apb_top.sv</div>
-      <pre><span class="kw">initial begin</span>
-  <span class="kw">wait</span>(apb_common::bfm_count == <span class="cmt">/* expected transfer count */</span>);
-  <span class="kw">if</span>(apb_common::matching != 0 &amp;&amp; apb_common::mismatching == 0)
-    $display(<span class="str">"TESTCASE PASSED!\nTestname: %s | Matching: %0d | Mismatching: %0d | Count: %0d"</span>,
-              apb_common::testname, apb_common::matching, apb_common::mismatching, apb_common::bfm_count);
-  <span class="kw">else</span> $display(<span class="str">"TESTCASE FAILED!\nTestname: %s | Matching: %0d | Mismatching: %0d | Count: %0d"</span>,
-              apb_common::testname, apb_common::matching, apb_common::mismatching, apb_common::bfm_count);
-<span class="kw">end</span></pre>
-      <div style="font-size:11px;color:var(--muted);margin-top:12px">Sample result for the default <code style="color:var(--amber)">NWRD</code> testcase — <code style="color:var(--green)">TESTCASE PASSED! Testname: NWRD | Matching: 8 | Mismatching: 0 | Count: 16</code></div>
-    </div>
-  </div>
-</section>
 
 <!-- FULL SOURCE CTA -->
 <section id="source">
-  <div class="sec-label">MODULE_09 &nbsp; REPOSITORY</div>
+  <div class="sec-label">MODULE_08 &nbsp; REPOSITORY</div>
   <h2 class="sec-title">FULL <span>SOURCE</span></h2>
   <div class="source-box reveal">
     <div class="source-icon">⬡</div>
